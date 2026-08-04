@@ -19,7 +19,7 @@
 | 12 | Sistema identifica tarefas vencidas | ✅ | Worker marca VENCIDA diariamente; e2e `fase4` (vencida ⇒ painel VERMELHO) |
 | 13 | Relatórios podem ser exportados | ✅ | CSV/XLSX/PDF verificados por conteúdo e magic bytes (e2e `fase4-flow`) |
 | 14 | Dados isolados por tenant | ✅ | 3 camadas (JWT→contexto→Prisma scoped fail-closed) + testes de isolamento em TODAS as suítes e2e |
-| 15 | Aplicação instalável em VPS | ⚠️ parcial | Imagens Docker de produção buildadas e testadas; `install-vps.sh` pronto, mas o ensaio ponta a ponta (DNS+TLS+compose completo) exige uma **VPS limpa dedicada** — a VPS atual compartilha as portas 80/443 com outros sistemas. Fazer no primeiro deploy real. |
+| 15 | Aplicação instalável em VPS | ⚠️ parcial | Imagens Docker de produção **buildadas e testadas em execução** (API respondeu health+login, worker agendou crons e processou fila real de e-mails, web serviu páginas); `install-vps.sh` pronto, mas o ensaio ponta a ponta (DNS+TLS+compose com Nginx) exige uma **VPS limpa dedicada** — a atual compartilha as portas 80/443 com outros sistemas. Fazer no primeiro deploy real. |
 | 16 | Backups gerados e restaurados | ✅ | Teste na VPS: pg_dump→criptografia AES-256→restore com contagens idênticas em 8 tabelas + ciclo completo do MinIO |
 | 17 | Logs de auditoria funcionando | ✅ | Interceptor + chamadas explícitas; consultados nos smoke tests; campos sensíveis redigidos |
 

@@ -14,7 +14,7 @@ Repositório: `https://github.com/Julioamancio/GUARDI-O-FISCAL`
 
 ## 📌 Estado atual do projeto (leia isto primeiro)
 
-**Última atualização: 04/08/2026 — Fase 4 COMPLETA (fechamento mensal, linha do tempo, relatórios, busca, importação, superadmin) e validada na VPS: 24 unitários + 37 e2e + smoke web 10/10 passando. Falta a Fase 5 (hardening) para fechar o MVP do requisito 36.**
+**Última atualização: 04/08/2026 — FASE 5 CONCLUÍDA: MVP COMPLETO. Imagens Docker de produção buildadas e testadas em execução; backup+restauração provados (contagens idênticas em 8 tabelas + MinIO); CI no GitHub Actions; checklist do requisito 36 em [docs/05-criterios-mvp.md](docs/05-criterios-mvp.md) (16/17 ✅; item 15 parcial — ensaio ponta a ponta pede VPS dedicada).**
 
 | Fase | Conteúdo | Status |
 |---|---|---|
@@ -23,15 +23,18 @@ Repositório: `https://github.com/Julioamancio/GUARDI-O-FISCAL`
 | Fase 2 — Núcleo operacional | Empresas (contatos, responsáveis por área, CNPJ validado, limite por plano), obrigações (catálogo com 10 templates BR + regras de vencimento), feriados 2025–2028 + estaduais/municipais, motor de datas fiscais, recorrência idempotente (API + worker 06:00 BRT), tarefas (status, checklist, comentários, resumo) **+ telas web**: dashboard com contadores reais, empresas (lista/cadastro/detalhe com catálogo de obrigações e gerador de tarefas), tarefas (filtros + status inline), sessão com renovação transparente no middleware e proxy autenticado | ✅ concluída e testada na VPS 04/08 |
 | Fase 3 — Documentos e portal | Solicitações com itens e conferência (aprovar/rejeitar com motivo), upload seguro p/ MinIO (extensão+MIME+25MB, bucket privado, links assinados 5 min, versões imutáveis), portal do cliente (papel client vê SÓ empresas vinculadas), cobranças automáticas D-5/D-3/D-0 + diária pós-vencimento (máx. 10, anti-spam por UNIQUE no banco, pausável), notificações in-app + e-mail SMTP no worker. Telas: /solicitacoes e /portal | ✅ concluída e testada na VPS 04/08 |
 | Fase 4 — Gestão e prova | Painel de fechamento mensal (semáforo do req. 8 por empresa/departamento), **linha do tempo de responsabilidade** append-only (autor denormalizado, IP, eventos de documentos/tarefas/cobranças) exportável, relatórios CSV/XLSX/PDF (tarefas, pendências de documentos, timeline), pesquisa global com permissões por categoria, importação CSV com pré-visualização e erros linha a linha, painel do superadmin (métricas + armazenamento por tenant) | ✅ concluída e testada na VPS 04/08 |
-| Fase 5 — Hardening MVP | e2e completos, backup/restore validados, instalação VPS ponta a ponta (requisito 36) | ⬜ |
+| Fase 5 — Hardening MVP | Imagens Docker de produção corrigidas (bug do prisma generate no worker) e validadas em execução; backup/restore testados com verificação de integridade; CI GitHub Actions (unit + e2e com Postgres/Redis/MinIO + build das 3 imagens); checklist do req. 36 | ✅ concluída 04/08 — ver [docs/05-criterios-mvp.md](docs/05-criterios-mvp.md) |
 | Pós-MVP | WhatsApp, validador XML, certificados/procurações, billing, white-label, Integra Contador, IA | ⬜ |
 
-### Pendências imediatas (retomar por aqui)
+### Pendências para o PRIMEIRO DEPLOY REAL (fora do escopo de código)
 
-1. **Fase 5 — Hardening do MVP (última antes da entrega)**: build e teste das imagens Docker de produção (`docker compose -f docker-compose.prod.yml build`) — nunca validadas; teste real de `scripts/backup.sh` + `restore.sh`; instalação ponta a ponta numa VPS limpa com `install-vps.sh`; CI no GitHub Actions (build + testes em cada push); revisar os critérios do requisito 36 um a um.
-2. **Para produção real**: configurar `SMTP_*` (sem isso e-mails ficam registrados com o motivo, sem envio); ClamAV nos uploads; domínio + DNS wildcard.
-3. Complementos de UI opcionais: kanban/calendário de tarefas, detalhe da tarefa, formulários de contatos/responsáveis/vínculo de cliente no detalhe da empresa (APIs prontas), sino de notificações (API `/notifications` pronta), ações do superadmin na tela (suspender/criar tenant — API pronta).
-4. Decisões registradas: departamentos são **enum**; regras de ICMS/ISS dos templates são genéricas — **validar com contador** (req. 37.10).
+1. **VPS limpa dedicada** + domínio + DNS wildcard → `bash scripts/install-vps.sh <dominio>` (fecha o item 15 do checklist).
+2. **SMTP** no `.env` (sem isso, e-mails ficam registrados com o motivo, sem envio real).
+3. ClamAV nos uploads; validação contábil das regras de ICMS/ISS (req. 37.10).
+
+### Backlog pós-MVP (requisito 35, segunda lista)
+
+WhatsApp Cloud API · validador avançado de XML · certificados/procurações · billing de assinaturas · white-label completo · Integra Contador · IA assistiva · complementos de UI (kanban/calendário, detalhe da tarefa, sino de notificações, ações do superadmin na tela — APIs prontas).
 
 ### Ambiente de teste na VPS (187.77.36.21 — compartilhada com outros projetos!)
 
