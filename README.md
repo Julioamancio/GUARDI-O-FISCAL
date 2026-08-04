@@ -14,12 +14,12 @@ Repositório: `https://github.com/Julioamancio/GUARDI-O-FISCAL`
 
 ## 📌 Estado atual do projeto (leia isto primeiro)
 
-**Última atualização: 04/08/2026 — Fase 1 (Fundação) implementada, aguardando validação em ambiente com Node/Docker.**
+**Última atualização: 04/08/2026 — Fase 1 (Fundação) implementada e VALIDADA na VPS (build + 7 testes unitários + 6 e2e de isolamento + smoke test de API todos passando).**
 
 | Fase | Conteúdo | Status |
 |---|---|---|
 | Planejamento | [docs/01-planejamento.md](docs/01-planejamento.md) — arquitetura, entidades, riscos, roadmap | ✅ concluído |
-| **Fase 1 — Fundação** | Monorepo, Docker, Postgres/Redis/MinIO, API NestJS (auth + multi-tenant + RBAC + auditoria), Web Next.js (login/dashboard), worker BullMQ, scripts VPS/backup | ✅ código pronto · ⚠️ **pendente: rodar `pnpm install` + testes em máquina com Node 20 (esta máquina de dev não tem Node) e commitar o `pnpm-lock.yaml`** |
+| **Fase 1 — Fundação** | Monorepo, Docker, Postgres/Redis/MinIO, API NestJS (auth + multi-tenant + RBAC + auditoria), Web Next.js (login/dashboard), worker BullMQ, scripts VPS/backup | ✅ concluída e testada na VPS em 04/08/2026 |
 | Fase 2 — Núcleo operacional | Empresas (completo), departamentos, obrigações + regras de vencimento + feriados, motor de recorrência, tarefas | ⬜ próximo |
 | Fase 3 — Documentos e portal | Solicitações, lembretes, portal do cliente, upload MinIO, central de documentos, e-mail | ⬜ |
 | Fase 4 — Gestão e prova | Dashboard real, fechamento mensal, linha do tempo de responsabilidade, relatórios, pesquisa global, importação | ⬜ |
@@ -28,10 +28,19 @@ Repositório: `https://github.com/Julioamancio/GUARDI-O-FISCAL`
 
 ### Pendências imediatas (retomar por aqui)
 
-1. Em máquina com Node 20 + pnpm: `pnpm install` → commitar `pnpm-lock.yaml`.
-2. `docker compose up -d` + migrate + seed + `pnpm --filter @guardiao/api test` e `test:e2e` (isolamento de tenants) — corrigir o que os testes apontarem.
-3. Validar o build Docker dos três apps (`docker compose -f docker-compose.prod.yml build`).
-4. Iniciar Fase 2 pelo módulo de **empresas** (schema já tem o núcleo de `companies`).
+1. Iniciar a **Fase 2** pelo módulo de **empresas** (schema já tem o núcleo de `companies`), depois obrigações + regras de vencimento + motor de recorrência no worker.
+2. Opcional recomendado: CI no GitHub Actions rodando build + testes a cada push.
+3. Validar o build das imagens Docker de produção (`docker compose -f docker-compose.prod.yml build`) antes da primeira implantação real.
+
+### Ambiente de teste na VPS (187.77.36.21 — compartilhada com outros projetos!)
+
+- Clone em `/root/guardiao-fiscal`, `.env` de teste já configurado.
+- Contêineres de teste: `gf-test-pg` (Postgres em `127.0.0.1:5433`) e `gf-test-redis`
+  (`127.0.0.1:6380`) — portas internas escolhidas para **não conflitar** com os
+  serviços existentes (3000, 3001, 5432, 80, 443 etc. estão OCUPADOS por outros projetos).
+- Para testar API ao vivo usar porta **3101** e SEMPRE encerrar depois
+  (`pkill -f dist/src/main.js`).
+- Comandos remotos: aspas aninhadas quebram — enviar script via `scp` e rodar `bash script.sh`.
 
 ---
 
