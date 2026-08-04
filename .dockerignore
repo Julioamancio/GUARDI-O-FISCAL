@@ -1,0 +1,13 @@
+# Mantém o contexto de build pequeno e sem segredos
+.git
+.env
+.env.*
+!.env.example
+node_modules
+**/node_modules
+**/dist
+**/.next
+backups
+docker/volumes
+*.log
+coverage

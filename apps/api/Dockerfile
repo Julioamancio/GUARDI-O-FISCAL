@@ -6,11 +6,12 @@ RUN corepack enable && apk add --no-cache openssl
 WORKDIR /app
 
 FROM base AS build
-COPY pnpm-workspace.yaml package.json ./
-COPY pnpm-lock.yaml* ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
-RUN pnpm install --filter @guardiao/api --filter @guardiao/shared --no-frozen-lockfile
+COPY apps/web/package.json apps/web/
+COPY apps/worker/package.json apps/worker/
+RUN pnpm install --filter @guardiao/api --filter @guardiao/shared --frozen-lockfile
 COPY packages/shared packages/shared
 COPY apps/api apps/api
 RUN pnpm --filter @guardiao/shared build \
