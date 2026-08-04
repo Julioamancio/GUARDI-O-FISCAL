@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { NewRequestForm } from './new-request-form';
+import { ExportButtons } from '../export-buttons';
 
 interface RequestRow {
   id: string;
@@ -40,9 +41,12 @@ export default async function SolicitacoesPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-brand-700">Solicitações de documentos</h1>
-        <span className="text-sm text-gray-500">{requests.length} exibidas</span>
+        <div className="flex items-center gap-4">
+          <ExportButtons path="/reports/document-pendencies" filename="documentos-pendentes" />
+          <span className="text-sm text-gray-500">{requests.length} exibidas</span>
+        </div>
       </div>
 
       <NewRequestForm companies={companies.items} />

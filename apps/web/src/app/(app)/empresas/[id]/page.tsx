@@ -76,12 +76,20 @@ export default async function EmpresaDetailPage({ params }: { params: Promise<{ 
             {company.uf && ` · ${company.municipio ?? ''}/${company.uf}`}
           </p>
         </div>
-        <Link
-          href={`/tarefas?companyId=${company.id}`}
-          className="rounded-lg border border-brand-500 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50"
-        >
-          Ver tarefas da empresa
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href={`/empresas/${company.id}/timeline`}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+          >
+            🕑 Linha do tempo
+          </Link>
+          <Link
+            href={`/tarefas?companyId=${company.id}`}
+            className="rounded-lg border border-brand-500 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50"
+          >
+            Ver tarefas da empresa
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

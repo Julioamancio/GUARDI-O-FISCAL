@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 const STAFF_LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
+  { href: '/fechamento', label: 'Fechamento' },
   { href: '/empresas', label: 'Empresas' },
   { href: '/tarefas', label: 'Tarefas' },
   { href: '/solicitacoes', label: 'Solicitações' },
@@ -62,6 +63,15 @@ export function Nav({
           )}
         </div>
         <div className="flex items-center gap-3">
+          {!isClient && !isSuperadmin && (
+            <form action="/busca" method="get" className="hidden md:block">
+              <input
+                name="q"
+                placeholder="🔍 Buscar..."
+                className="w-44 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:w-64 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </form>
+          )}
           <div className="hidden text-right sm:block">
             <p className="text-sm font-medium text-gray-800">{userName}</p>
             <p className="text-xs text-gray-500">{tenantName}</p>

@@ -30,16 +30,83 @@ export default async function DashboardPage() {
   }
 
   if (me.tenantId === null) {
-    const tenants = await apiFetch<{ total: number }>('/admin/tenants?perPage=1');
+    const [overview, tenants] = await Promise.all([
+      apiFetch<{
+        tenants: Record<string, number>;
+        totalUsers: number;
+        totalCompanies: number;
+        totalTasks: number;
+        storageTop: Array<{ tenant: string; slug: string | null; bytes: number }>;
+        storageTotalBytes: number;
+      }>('/admin/overview'),
+      apiFetch<{
+        items: Array<{
+          id: string;
+          slug: string;
+          razaoSocial: string;
+          status: string;
+          plan: { name: string } | null;
+          _count: { users: number; companies: number };
+        }>;
+        total: number;
+      }>('/admin/tenants?perPage=20'),
+    ]);
+    const fmtBytes = (b: number) =>
+      b > 1024 * 1024 * 1024 ? `${(b / 1024 ** 3).toFixed(1)} GB` : `${Math.ceil(b / 1024 / 1024)} MB`;
+    const totalTenants = Object.values(overview.tenants).reduce((a, b) => a + b, 0);
+
     return (
       <div>
         <h1 className="mb-6 text-2xl font-bold text-brand-700">Administração da Plataforma</h1>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Card label="Escritórios cadastrados" value={String(tenants.total)} tone="default" />
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+          <Card label="Escritórios" value={String(totalTenants)} tone="default" />
+          <Card label="Usuários" value={String(overview.totalUsers)} tone="info" />
+          <Card label="Empresas atendidas" value={String(overview.totalCompanies)} tone="default" />
+          <Card label="Tarefas" value={String(overview.totalTasks)} tone="default" />
+          <Card label="Armazenamento" value={fmtBytes(overview.storageTotalBytes)} tone="warn" />
         </div>
-        <p className="mt-6 text-sm text-gray-500">
-          Gestão de escritórios e planos disponível via API (<code>/docs</code>). Painel visual do
-          superadmin entra na Fase 4.
+
+        <section className="mt-8 overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs uppercase text-gray-500">
+                <th className="px-4 py-3">Escritório</th>
+                <th className="px-4 py-3">Subdomínio</th>
+                <th className="px-4 py-3">Plano</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Usuários</th>
+                <th className="px-4 py-3 text-right">Empresas</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tenants.items.map((tenant) => (
+                <tr key={tenant.id} className="border-b border-gray-100 last:border-0">
+                  <td className="px-4 py-3 font-medium text-gray-800">{tenant.razaoSocial}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-gray-500">{tenant.slug}</td>
+                  <td className="px-4 py-3">{tenant.plan?.name ?? '—'}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        tenant.status === 'ACTIVE'
+                          ? 'bg-green-50 text-green-700'
+                          : tenant.status === 'TRIAL'
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'bg-red-50 text-red-700'
+                      }`}
+                    >
+                      {tenant.status.toLowerCase()}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">{tenant._count.users}</td>
+                  <td className="px-4 py-3 text-right">{tenant._count.companies}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+        <p className="mt-3 text-xs text-gray-400">
+          Exibindo {tenants.items.length} de {tenants.total} escritórios · gestão completa (criar,
+          suspender, planos) via API <code>/docs</code>
         </p>
       </div>
     );

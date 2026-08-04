@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { NewCompanyForm } from './new-company-form';
+import { ImportCsv } from './import-csv';
 
 interface CompanyRow {
   id: string;
@@ -57,7 +58,10 @@ export default async function EmpresasPage({
         <span className="text-sm text-gray-500">{data.total} cadastradas</span>
       </div>
 
-      <NewCompanyForm />
+      <div className="flex flex-wrap items-start gap-3">
+        <NewCompanyForm />
+        <ImportCsv />
+      </div>
 
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
         <div>

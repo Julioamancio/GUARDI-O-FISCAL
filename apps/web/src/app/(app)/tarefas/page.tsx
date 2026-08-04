@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { StatusSelect } from './status-select';
+import { ExportButtons } from '../export-buttons';
 
 interface TaskRow {
   id: string;
@@ -69,9 +70,15 @@ export default async function TarefasPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-brand-700">Tarefas</h1>
-        <span className="text-sm text-gray-500">{data.total} encontradas</span>
+        <div className="flex items-center gap-4">
+          <ExportButtons
+            path={`/reports/tasks?x=1${params.competence ? `&competence=${params.competence}` : ''}${params.status ? `&status=${params.status}` : ''}${params.companyId ? `&companyId=${params.companyId}` : ''}`}
+            filename={`tarefas${params.competence ? `-${params.competence}` : ''}`}
+          />
+          <span className="text-sm text-gray-500">{data.total} encontradas</span>
+        </div>
       </div>
 
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
