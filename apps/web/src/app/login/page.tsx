@@ -36,8 +36,8 @@ const BENEFITS = [
         <path d="m9 16 2 2 4-4" />
       </Icon>
     ),
-    title: 'Prazos no automático',
-    text: 'As tarefas de DAS, FGTS, folha e companhia nascem sozinhas todo mês, na data certa — feriados e dias úteis já calculados.',
+    title: 'Prazos no piloto automático',
+    text: 'DAS, FGTS, folha e todas as obrigações entram no calendário sozinhas, na data certa — com feriados e dias úteis calculados.',
   },
   {
     icon: (
@@ -47,8 +47,8 @@ const BENEFITS = [
         <path d="m16 19 2 2 4-4" />
       </Icon>
     ),
-    title: 'Documentos chegam sem correr atrás',
-    text: 'O sistema lembra seu cliente quantas vezes for preciso e recebe tudo num portal organizado. Você só confere e aprova.',
+    title: 'Documentos sem perseguição',
+    text: 'O sistema lembra o cliente quantas vezes for preciso e recebe tudo num portal organizado. Você só confere e aprova.',
   },
   {
     icon: (
@@ -57,8 +57,8 @@ const BENEFITS = [
         <path d="m9 12 2 2 4-4" />
       </Icon>
     ),
-    title: 'Prova na mão',
-    text: 'Cada pedido, cobrança, envio e aprovação fica numa linha do tempo que ninguém apaga — e sai em PDF quando você precisar.',
+    title: 'Prova de cada passo',
+    text: 'Pedidos, cobranças, envios e aprovações ficam numa linha do tempo que ninguém apaga — e saem em PDF quando você precisar.',
   },
   {
     icon: (
@@ -69,8 +69,8 @@ const BENEFITS = [
         <rect width="7" height="5" x="3" y="16" rx="1" />
       </Icon>
     ),
-    title: 'O escritório inteiro numa tela',
-    text: 'Semáforo por empresa e departamento: você bate o olho, encontra o problema e age antes de virar multa.',
+    title: 'Tudo numa tela só',
+    text: 'Semáforo por empresa e por departamento: o problema aparece para você antes de virar multa.',
   },
 ];
 
@@ -130,28 +130,33 @@ export default function LoginPage() {
           <p className="text-2xl font-bold tracking-tight">Radar Contábil</p>
         </div>
 
-        <div className="relative max-w-lg">
-          <h1 className="text-4xl font-bold leading-tight">
-            O escritório contábil que{' '}
-            <span className="underline decoration-brand-100/60 decoration-4 underline-offset-4">
-              nunca perde um prazo
-            </span>
-            .
+        <div className="relative flex flex-1 flex-col justify-center py-10">
+          <h1 className="text-5xl font-bold leading-[1.15] tracking-tight">
+            Seu escritório
+            <br />
+            nunca mais perde
+            <br />
+            <span className="text-cyan-300">um prazo.</span>
           </h1>
-          <p className="mt-4 text-lg text-brand-50/90">
-            Central de obrigações, documentos e prova de responsabilidade para escritórios de
-            contabilidade — funcionando sozinha enquanto você atende seus clientes.
+          <p className="mt-6 max-w-xl text-lg leading-relaxed text-brand-50/90">
+            O Radar Contábil vigia os vencimentos, cobra os documentos dos seus clientes e
+            guarda as provas — sozinho, todos os dias, para cada empresa da sua carteira.
           </p>
 
-          <ul className="mt-8 space-y-4">
+          <ul className="mt-10 grid max-w-3xl grid-cols-1 gap-4 xl:grid-cols-2">
             {BENEFITS.map((benefit) => (
-              <li key={benefit.title} className="flex gap-3">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white backdrop-blur">
-                  {benefit.icon}
+              <li
+                key={benefit.title}
+                className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm"
+              >
+                <span className="flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 text-cyan-200">
+                    {benefit.icon}
+                  </span>
+                  <span className="font-semibold">{benefit.title}</span>
                 </span>
-                <span>
-                  <span className="block font-semibold">{benefit.title}</span>
-                  <span className="block text-sm text-brand-50/80">{benefit.text}</span>
+                <span className="mt-2 block text-sm leading-relaxed text-brand-50/80">
+                  {benefit.text}
                 </span>
               </li>
             ))}
