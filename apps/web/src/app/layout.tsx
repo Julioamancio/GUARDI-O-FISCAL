@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     'Nenhuma obrigação esquecida. Nenhum documento perdido. Nenhum erro fiscal silencioso.',
   icons: {
-    icon: '/mascote.svg', // mascote oficial do projeto
+    icon: '/mascote.png', // mascote oficial do projeto
   },
 };
 

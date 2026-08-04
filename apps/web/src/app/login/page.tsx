@@ -122,7 +122,7 @@ export default function LoginPage() {
 
         <div className="relative flex items-center gap-3">
           <img
-            src="/mascote.svg"
+            src="/mascote.png"
             alt="Mascote do Guardião Fiscal"
             className="h-12 w-12 object-contain drop-shadow-lg"
             onError={(e) => (e.currentTarget.style.display = 'none')}
@@ -160,7 +160,7 @@ export default function LoginPage() {
 
         <div className="relative flex items-end justify-end">
           <img
-            src="/mascote.svg"
+            src="/mascote.png"
             alt=""
             aria-hidden
             className="pointer-events-none -mb-6 -mr-2 h-56 w-auto object-contain drop-shadow-2xl"
@@ -174,7 +174,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="mb-8 text-center lg:hidden">
             <img
-              src="/mascote.svg"
+              src="/mascote.png"
               alt=""
               className="mx-auto mb-3 h-24 w-auto object-contain"
               onError={(e) => (e.currentTarget.style.display = 'none')}
