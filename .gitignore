@@ -1,0 +1,34 @@
+# dependências
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+.next/
+out/
+build/
+
+# ambiente — NUNCA versionar segredos
+.env
+.env.local
+.env.production
+*.pem
+*.p12
+*.pfx
+
+# logs e temporários
+*.log
+logs/
+tmp/
+coverage/
+
+# volumes locais
+docker/volumes/
+backups/*.gz
+backups/*.age
+
+# IDE / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

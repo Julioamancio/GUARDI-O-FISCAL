@@ -1,0 +1,23 @@
+{
+  "name": "guardiao-fiscal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma SaaS multi-tenant de controle, auditoria e prevenção fiscal para escritórios de contabilidade",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev:api": "pnpm --filter @guardiao/api start:dev",
+    "dev:web": "pnpm --filter @guardiao/web dev",
+    "dev:worker": "pnpm --filter @guardiao/worker start:dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "prisma:generate": "pnpm --filter @guardiao/api prisma:generate",
+    "prisma:migrate": "pnpm --filter @guardiao/api prisma:migrate",
+    "prisma:deploy": "pnpm --filter @guardiao/api prisma:deploy",
+    "prisma:seed": "pnpm --filter @guardiao/api prisma:seed"
+  }
+}

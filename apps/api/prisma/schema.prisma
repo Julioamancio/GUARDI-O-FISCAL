@@ -1,0 +1,271 @@
+// ==============================================================================
+// GUARDIÃO FISCAL — Schema Prisma (Fase 1)
+// Regra de ouro: toda tabela de negócio carrega tenantId e toda consulta
+// passa pelo filtro automático de tenant (src/prisma/prisma.service.ts).
+// audit_logs é append-only: nunca receber UPDATE/DELETE da aplicação.
+// ==============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum TenantStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum RegimeTributario {
+  SIMPLES_NACIONAL
+  LUCRO_PRESUMIDO
+  LUCRO_REAL
+  MEI
+  IMUNE_ISENTA
+  OUTRO
+}
+
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ---------------------------------------------------------------------------
+// Planos e tenants
+// ---------------------------------------------------------------------------
+
+model Plan {
+  id           String   @id @default(uuid())
+  slug         String   @unique
+  name         String
+  maxCompanies Int
+  maxUsers     Int
+  storageMb    Int
+  priceCents   Int      @default(0)
+  features     Json     @default("[]")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenants       Tenant[]
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Tenant {
+  id           String       @id @default(uuid())
+  slug         String       @unique // subdomínio: <slug>.guardiaofiscal.com.br
+  razaoSocial  String
+  nomeFantasia String?
+  cnpj         String?      @unique
+  email        String
+  phone        String?
+  logoUrl      String?
+  primaryColor String?
+  customDomain String?      @unique
+  status       TenantStatus @default(TRIAL)
+  planId       String?
+  address      Json?
+  settings     Json         @default("{}")
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+
+  plan          Plan?          @relation(fields: [planId], references: [id], onDelete: SetNull)
+  users         User[]
+  companies     Company[]
+  subscriptions Subscription[]
+
+  @@index([status])
+  @@map("tenants")
+}
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  tenantId           String
+  planId             String
+  status             SubscriptionStatus @default(TRIALING)
+  trialEndsAt        DateTime?
+  currentPeriodStart DateTime           @default(now())
+  currentPeriodEnd   DateTime?
+  canceledAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  @@index([tenantId])
+  @@map("subscriptions")
+}
+
+// ---------------------------------------------------------------------------
+// Usuários, papéis e permissões (RBAC)
+// ---------------------------------------------------------------------------
+
+model User {
+  id               String    @id @default(uuid())
+  tenantId         String? // NULL = superadmin da plataforma
+  name             String
+  email            String
+  passwordHash     String
+  isActive         Boolean   @default(true)
+  twoFactorEnabled Boolean   @default(false)
+  twoFactorSecret  String? // criptografado com ENCRYPTION_KEY (AES-256-GCM)
+  lastLoginAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  tenant        Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roles         UserRole[]
+  refreshTokens RefreshToken[]
+
+  @@unique([tenantId, email])
+  @@index([email])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique // SHA-256 do token; o token em si nunca é persistido
+  family    String // detecção de reuso: reuso de token revogado derruba a família
+  expiresAt DateTime
+  revokedAt DateTime?
+  ip        String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([family])
+  @@map("refresh_tokens")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  slug        String   @unique // superadmin | tenant_admin | accountant | client | auditor
+  name        String
+  description String?
+  isSystem    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  slug        String  @unique // ex.: companies.read, companies.write, users.manage
+  description String?
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+// ---------------------------------------------------------------------------
+// Empresas atendidas (núcleo — campos completos entram na Fase 2)
+// ---------------------------------------------------------------------------
+
+model Company {
+  id                 String            @id @default(uuid())
+  tenantId           String
+  razaoSocial        String
+  nomeFantasia       String?
+  cnpj               String
+  inscricaoEstadual  String?
+  inscricaoMunicipal String?
+  cnaePrincipal      String?
+  regimeTributario   RegimeTributario?
+  uf                 String?           @db.VarChar(2)
+  municipio          String?
+  dataAbertura       DateTime?
+  status             CompanyStatus     @default(ACTIVE)
+  riskLevel          RiskLevel         @default(LOW)
+  observacoes        String?
+  tags               String[]          @default([])
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  deletedAt          DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, cnpj])
+  @@index([tenantId, status])
+  @@map("companies")
+}
+
+// ---------------------------------------------------------------------------
+// Auditoria (append-only — a aplicação só insere; sem update/delete)
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String? // NULL para ações de superadmin fora de tenant
+  userId    String?
+  action    String // ex.: auth.login, tenants.create, users.update
+  entity    String // ex.: Tenant, User, Company
+  entityId  String?
+  ip        String?
+  userAgent String?
+  before    Json?
+  after     Json?
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
