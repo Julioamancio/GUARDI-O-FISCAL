@@ -44,7 +44,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-brand-700">Guardião Fiscal</h1>
+          <h1 className="text-3xl font-bold text-brand-700">🤖 Guardião Fiscal</h1>
           <p className="mt-2 text-sm text-gray-600">
             Nenhuma obrigação esquecida. Nenhum documento perdido.
           </p>

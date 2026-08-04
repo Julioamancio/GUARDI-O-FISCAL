@@ -1,4 +1,4 @@
-# 🛡️ Guardião Fiscal
+# 🤖 Guardião Fiscal
 
 [![CI](https://github.com/Julioamancio/GUARDI-O-FISCAL/actions/workflows/ci.yml/badge.svg)](https://github.com/Julioamancio/GUARDI-O-FISCAL/actions/workflows/ci.yml)
 

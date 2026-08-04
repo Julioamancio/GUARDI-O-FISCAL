@@ -42,7 +42,7 @@ export function Nav({
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
         <div className="flex items-center gap-8">
           <Link href="/dashboard" className="text-lg font-bold text-brand-700">
-            🛡️ Guardião Fiscal
+            🤖 Guardião Fiscal
           </Link>
           {!isSuperadmin && (
             <nav className="flex items-center gap-1">
