@@ -14,7 +14,7 @@ interface TaskRow {
   obligation: { name: string; sphere: string } | null;
 }
 
-export const STATUS_LABEL: Record<string, string> = {
+const STATUS_LABEL: Record<string, string> = {
   NAO_INICIADA: 'Não iniciada',
   AGUARDANDO_DOCUMENTOS: 'Aguardando documentos',
   EM_ANDAMENTO: 'Em andamento',
