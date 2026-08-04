@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     'Nenhuma obrigação esquecida. Nenhum documento perdido. Nenhum erro fiscal silencioso.',
   icons: {
-    icon: '/mascote.png', // mascote oficial do projeto
+    icon: '/logo.png', // antena de radar — logo oficial (o robô é o mascote)
   },
 };
 

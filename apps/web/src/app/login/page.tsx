@@ -122,9 +122,9 @@ export default function LoginPage() {
 
         <div className="relative flex items-center gap-3">
           <img
-            src="/mascote.png"
-            alt="Mascote do Radar Contábil"
-            className="h-12 w-12 object-contain drop-shadow-lg"
+            src="/logo.png"
+            alt="Logo do Radar Contábil"
+            className="h-11 w-11 object-contain drop-shadow-lg"
             onError={(e) => (e.currentTarget.style.display = 'none')}
           />
           <p className="text-2xl font-bold tracking-tight">Radar Contábil</p>
@@ -176,9 +176,9 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="mb-8 text-center lg:hidden">
             <img
-              src="/mascote.png"
+              src="/logo.png"
               alt=""
-              className="mx-auto mb-3 h-24 w-auto object-contain"
+              className="mx-auto mb-3 h-20 w-auto object-contain"
               onError={(e) => (e.currentTarget.style.display = 'none')}
             />
             <h1 className="text-3xl font-bold text-brand-700">Radar Contábil</h1>

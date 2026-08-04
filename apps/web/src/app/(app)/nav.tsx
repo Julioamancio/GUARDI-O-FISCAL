@@ -43,7 +43,7 @@ export function Nav({
         <div className="flex items-center gap-8">
           <Link href="/dashboard" className="flex items-center gap-2 text-lg font-bold text-brand-700">
             <img
-              src="/mascote.png"
+              src="/logo.png"
               alt=""
               className="h-8 w-8 object-contain"
               onError={(e) => (e.currentTarget.style.display = 'none')}
