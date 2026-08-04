@@ -114,12 +114,7 @@ export default function LoginPage() {
           </ul>
         </div>
 
-        <div className="relative flex items-end justify-between gap-4">
-          <p className="text-xs text-brand-50/60">
-            Nenhuma obrigação esquecida. Nenhum documento perdido.
-            <br />
-            Nenhum erro fiscal silencioso.
-          </p>
+        <div className="relative flex items-end justify-end">
           <img
             src="/mascote.svg"
             alt=""
