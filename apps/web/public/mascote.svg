@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" role="img" aria-label="Mascote do Guardião Fiscal">
+  <defs>
+    <linearGradient id="corpo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#eef4fb"/>
+      <stop offset="1" stop-color="#c9d9ec"/>
+    </linearGradient>
+    <linearGradient id="azul" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7db6ee"/>
+      <stop offset="1" stop-color="#2a78d6"/>
+    </linearGradient>
+    <radialGradient id="nucleo" cx="0.35" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#aee1ff"/>
+      <stop offset="0.5" stop-color="#3fa2f0"/>
+      <stop offset="1" stop-color="#1c5cab"/>
+    </radialGradient>
+    <radialGradient id="antena" cx="0.35" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#d6ffb3"/>
+      <stop offset="0.55" stop-color="#7ee65a"/>
+      <stop offset="1" stop-color="#3fae2a"/>
+    </radialGradient>
+    <radialGradient id="olho" cx="0.4" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#bff1ff"/>
+      <stop offset="0.55" stop-color="#3ec6f2"/>
+      <stop offset="1" stop-color="#1493c9"/>
+    </radialGradient>
+    <linearGradient id="visor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d2b4a"/>
+      <stop offset="1" stop-color="#101b33"/>
+    </linearGradient>
+  </defs>
+
+  <!-- sombra no chão -->
+  <ellipse cx="200" cy="537" rx="118" ry="16" fill="#0d366b" opacity="0.14"/>
+
+  <!-- antena -->
+  <rect x="196" y="52" width="8" height="34" rx="4" fill="#9fb4cd"/>
+  <circle cx="200" cy="42" r="17" fill="url(#antena)"/>
+  <circle cx="194" cy="36" r="5" fill="#ffffff" opacity="0.75"/>
+
+  <!-- braço esquerdo (apontando para cima) -->
+  <g>
+    <rect x="66" y="176" width="34" height="96" rx="17" fill="url(#corpo)" stroke="#a9bfd8" stroke-width="2" transform="rotate(24 83 224)"/>
+    <rect x="52" y="150" width="30" height="52" rx="15" fill="url(#azul)" transform="rotate(24 67 176)"/>
+    <!-- mão com dedo para cima -->
+    <circle cx="52" cy="132" r="20" fill="url(#corpo)" stroke="#a9bfd8" stroke-width="2"/>
+    <rect x="44" y="92" width="13" height="34" rx="6.5" fill="url(#corpo)" stroke="#a9bfd8" stroke-width="2"/>
+  </g>
+
+  <!-- braço direito (na cintura) -->
+  <g>
+    <rect x="300" y="176" width="34" height="92" rx="17" fill="url(#corpo)" stroke="#a9bfd8" stroke-width="2" transform="rotate(-26 317 222)"/>
+    <rect x="316" y="152" width="30" height="50" rx="15" fill="url(#azul)" transform="rotate(-26 331 177)"/>
+    <circle cx="322" cy="262" r="19" fill="url(#corpo)" stroke="#a9bfd8" stroke-width="2"/>
+  </g>
+
+  <!-- pernas -->
+  <g>
+    <rect x="128" y="416" width="56" height="92" rx="26" fill="url(#corpo)" stroke="#a9bfd8" stroke-width="2"/>
+    <rect x="216" y="416" width="56" height="92" rx="26" fill="url(#corpo)" stroke="#a9bfd8" stroke-width="2"/>
+    <rect x="132" y="446" width="48" height="12" rx="6" fill="#c3d4e8"/>
+    <rect x="220" y="446" width="48" height="12" rx="6" fill="#c3d4e8"/>
+    <!-- pés -->
+    <path d="M112 522 q0 -26 44 -26 q44 0 44 26 q0 12 -12 12 l-64 0 q-12 0 -12 -12 z" fill="url(#corpo)" stroke="#a9bfd8" stroke-width="2"/>
+    <path d="M200 522 q0 -26 44 -26 q44 0 44 26 q0 12 -12 12 l-64 0 q-12 0 -12 -12 z" fill="url(#corpo)" stroke="#a9bfd8" stroke-width="2"/>
+  </g>
+
+  <!-- tronco -->
+  <path d="M124 236 q76 -26 152 0 q14 78 -6 150 q-70 26 -140 0 q-20 -72 -6 -150 z" fill="url(#corpo)" stroke="#a9bfd8" stroke-width="2.5"/>
+  <!-- barriga escura -->
+  <path d="M148 330 q52 20 104 0 q6 34 -8 52 q-44 16 -88 0 q-14 -18 -8 -52 z" fill="url(#visor)"/>
+  <!-- cinto azul -->
+  <path d="M130 318 q70 24 140 0 l-2 14 q-68 22 -136 0 z" fill="url(#azul)" opacity="0.85"/>
+  <!-- núcleo do peito -->
+  <circle cx="200" cy="282" r="30" fill="#dce8f5" stroke="#a9bfd8" stroke-width="2.5"/>
+  <circle cx="200" cy="282" r="21" fill="url(#nucleo)"/>
+  <circle cx="192" cy="274" r="6" fill="#ffffff" opacity="0.8"/>
+
+  <!-- orelhas -->
+  <ellipse cx="86" cy="180" rx="16" ry="30" fill="url(#azul)"/>
+  <ellipse cx="314" cy="180" rx="16" ry="30" fill="url(#azul)"/>
+
+  <!-- cabeça -->
+  <path d="M92 172 q0 -96 108 -96 q108 0 108 96 q0 66 -108 66 q-108 0 -108 -66 z" fill="url(#corpo)" stroke="#a9bfd8" stroke-width="2.5"/>
+  <!-- brilho no topo da cabeça -->
+  <path d="M130 106 q30 -20 70 -18 q-44 6 -62 30 q-10 -4 -8 -12 z" fill="#ffffff" opacity="0.8"/>
+
+  <!-- visor -->
+  <path d="M120 164 q0 -52 80 -52 q80 0 80 52 q0 44 -80 44 q-80 0 -80 -44 z" fill="url(#visor)"/>
+
+  <!-- olhos -->
+  <circle cx="163" cy="162" r="24" fill="url(#olho)"/>
+  <circle cx="237" cy="162" r="24" fill="url(#olho)"/>
+  <circle cx="163" cy="162" r="11" fill="#0e2a4e"/>
+  <circle cx="237" cy="162" r="11" fill="#0e2a4e"/>
+  <circle cx="156" cy="153" r="7" fill="#ffffff" opacity="0.95"/>
+  <circle cx="230" cy="153" r="7" fill="#ffffff" opacity="0.95"/>
+  <circle cx="169" cy="170" r="3.4" fill="#ffffff" opacity="0.6"/>
+  <circle cx="243" cy="170" r="3.4" fill="#ffffff" opacity="0.6"/>
+
+  <!-- sorriso -->
+  <path d="M182 190 q18 12 36 0" fill="none" stroke="#3ec6f2" stroke-width="6" stroke-linecap="round"/>
+</svg>
