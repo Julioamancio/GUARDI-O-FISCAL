@@ -69,6 +69,10 @@ jobs:
       - name: Instalar dependências
         run: pnpm install --frozen-lockfile
 
+      - name: Prisma generate (tipos usados pelo build do worker e da api)
+        working-directory: apps/api
+        run: npx prisma generate
+
       - name: Build (shared -> worker/api/web)
         run: pnpm -r build
 
