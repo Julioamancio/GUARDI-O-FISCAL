@@ -160,6 +160,10 @@ export default async function TarefasPage({
         )}
       </form>
 
+      {isKanban ? (
+        <KanbanBoard tasks={data.items} />
+      ) : (
+        <>
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
         <table className="w-full text-sm">
           <thead>
@@ -228,6 +232,8 @@ export default async function TarefasPage({
             </Link>
           ))}
         </div>
+      )}
+        </>
       )}
     </div>
   );
