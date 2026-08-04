@@ -18,16 +18,15 @@ export interface RequestContext {
 const als = new AsyncLocalStorage<RequestContext>();
 
 export const TenantContext = {
-  /** Inicia o contexto para a cadeia assíncrona atual (chamado pelo guard). */
-  enter(ctx: RequestContext): void {
-    als.enterWith(ctx);
-  },
-
   get(): RequestContext | undefined {
     return als.getStore();
   },
 
-  /** Executa fn dentro de um contexto explícito (útil em jobs e testes). */
+  /**
+   * Executa fn dentro de um contexto explícito. É o ÚNICO jeito de abrir
+   * contexto: `enterWith` dentro de guard/função async não se propaga para a
+   * continuação da requisição (bug corrigido no TenantContextInterceptor).
+   */
   run<T>(ctx: RequestContext, fn: () => T): T {
     return als.run(ctx, fn);
   },

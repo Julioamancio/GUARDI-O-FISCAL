@@ -3,12 +3,13 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { TenantContext } from '../tenant-context';
 import type { AccessTokenPayload } from '../../auth/auth.types';
 
 /**
- * Guard global: valida o access token e inicializa o TenantContext.
- * Rotas com @Public() passam sem token (o contexto fica vazio).
+ * Guard global: valida o access token e anexa o payload em request.user.
+ * O TenantContext é aberto depois, pelo TenantContextInterceptor — um guard
+ * não consegue propagar AsyncLocalStorage para o handler.
+ * Rotas com @Public() passam sem token.
  */
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -43,16 +44,6 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     (request as Request & { user: AccessTokenPayload }).user = payload;
-
-    TenantContext.enter({
-      userId: payload.sub,
-      tenantId: payload.tid,
-      roles: payload.roles ?? [],
-      permissions: payload.perms ?? [],
-      ip: request.ip,
-      userAgent: request.headers['user-agent'],
-    });
-
     return true;
   }
 

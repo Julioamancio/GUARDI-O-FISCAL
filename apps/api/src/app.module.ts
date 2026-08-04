@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './prisma/prisma.module';
@@ -11,6 +11,7 @@ import { UsersModule } from './users/users.module';
 import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
+import { TenantContextInterceptor } from './common/interceptors/tenant-context.interceptor';
 
 @Module({
   imports: [
@@ -24,10 +25,12 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
     HealthModule,
   ],
   providers: [
-    // Ordem importa: throttling -> autenticação -> autorização
+    // Ordem importa: throttling -> autenticação -> autorização;
+    // o interceptor abre o TenantContext DEPOIS dos guards, envolvendo o handler
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
+    { provide: APP_INTERCEPTOR, useClass: TenantContextInterceptor },
   ],
 })
 export class AppModule {}
