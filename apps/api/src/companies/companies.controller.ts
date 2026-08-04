@@ -82,4 +82,17 @@ export class CompaniesController {
   removeResponsible(@Param('id', ParseUUIDPipe) id: string, @Param('area') area: string) {
     return this.companiesService.removeResponsible(id, area);
   }
+
+  @Post(':id/clients/:userId')
+  @RequirePermissions('companies.write')
+  @ApiOperation({ summary: 'Vincula usuário-cliente à empresa (acesso ao portal)' })
+  linkClient(@Param('id', ParseUUIDPipe) id: string, @Param('userId', ParseUUIDPipe) userId: string) {
+    return this.companiesService.linkClient(id, userId);
+  }
+
+  @Delete(':id/clients/:userId')
+  @RequirePermissions('companies.write')
+  unlinkClient(@Param('id', ParseUUIDPipe) id: string, @Param('userId', ParseUUIDPipe) userId: string) {
+    return this.companiesService.unlinkClient(id, userId);
+  }
 }

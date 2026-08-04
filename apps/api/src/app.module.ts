@@ -11,6 +11,9 @@ import { UsersModule } from './users/users.module';
 import { CompaniesModule } from './companies/companies.module';
 import { ObligationsModule } from './obligations/obligations.module';
 import { TasksModule } from './tasks/tasks.module';
+import { StorageModule } from './storage/storage.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { DocumentsModule } from './documents/documents.module';
 import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
@@ -28,6 +31,9 @@ import { TenantContextInterceptor } from './common/interceptors/tenant-context.i
     CompaniesModule,
     ObligationsModule,
     TasksModule,
+    StorageModule,
+    NotificationsModule,
+    DocumentsModule,
     HealthModule,
   ],
   providers: [

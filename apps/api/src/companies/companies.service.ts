@@ -67,6 +67,7 @@ export class CompaniesService {
         contacts: { orderBy: { createdAt: 'asc' } },
         responsibles: { include: { user: { select: { id: true, name: true, email: true } } } },
         obligations: { where: { deletedAt: null }, orderBy: { name: 'asc' } },
+        clientAccesses: { include: { user: { select: { id: true, name: true, email: true, isActive: true } } } },
       },
     });
     if (!company) throw new NotFoundException('Empresa não encontrada');
@@ -212,6 +213,49 @@ export class CompaniesService {
     if (!existing) throw new NotFoundException('Responsável não encontrado para esta área');
     await this.prisma.scoped.companyResponsible.delete({ where: { id: existing.id } });
     await this.audit.log({ action: 'companies.responsibles.remove', entity: 'CompanyResponsible', entityId: existing.id });
+    return { deleted: true };
+  }
+
+  // --- Acesso de clientes ao portal ---
+
+  /** Vincula um usuário com papel "client" à empresa (o que ele vê no portal). */
+  async linkClient(companyId: string, userId: string) {
+    await this.ensureCompany(companyId);
+    const user = await this.prisma.scoped.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      include: { roles: { include: { role: true } } },
+    });
+    if (!user) throw new NotFoundException('Usuário não encontrado no escritório');
+    if (!user.roles.some((r) => r.role.slug === 'client')) {
+      throw new BadRequestException('Apenas usuários com papel "Cliente do Escritório" podem ser vinculados ao portal');
+    }
+    const existing = await this.prisma.scoped.companyClientAccess.findFirst({
+      where: { companyId, userId },
+    });
+    if (existing) return existing;
+    const access = await this.prisma.scoped.companyClientAccess.create({
+      data: { companyId, userId, tenantId: this.tid() },
+    });
+    await this.audit.log({
+      action: 'companies.clients.link',
+      entity: 'CompanyClientAccess',
+      entityId: access.id,
+      after: { companyId, userId },
+    });
+    return access;
+  }
+
+  async unlinkClient(companyId: string, userId: string) {
+    const existing = await this.prisma.scoped.companyClientAccess.findFirst({
+      where: { companyId, userId },
+    });
+    if (!existing) throw new NotFoundException('Vínculo não encontrado');
+    await this.prisma.scoped.companyClientAccess.delete({ where: { id: existing.id } });
+    await this.audit.log({
+      action: 'companies.clients.unlink',
+      entity: 'CompanyClientAccess',
+      entityId: existing.id,
+    });
     return { deleted: true };
   }
 

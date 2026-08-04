@@ -24,6 +24,12 @@ const TENANT_MODELS = new Set<string>([
   'Obligation',
   'Task',
   'TaskComment',
+  'CompanyClientAccess',
+  'DocumentRequest',
+  'DocumentRequestItem',
+  'Document',
+  'DocumentVersion',
+  'DocumentReminder',
 ]);
 
 type ScopedClient = ReturnType<PrismaService['createScopedClient']>;
