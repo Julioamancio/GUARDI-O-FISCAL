@@ -30,8 +30,11 @@ Repositório: `https://github.com/Julioamancio/GUARDI-O-FISCAL`
 
 ### 🟢 Instância de demonstração NO AR
 
-`http://187.77.36.21:8100` — stack `guardiao-shared` (compose próprio, rede isolada, porta única),
-convivendo com os demais sistemas da VPS. Credenciais do superadmin em `/root/guardiao-fiscal/.env.shared`.
+**`http://guardiao.187-77-36-21.nip.io`** (porta 80 — funciona atrás de proxies corporativos/escolares)
+— o nginx do host repassa esse nome para a stack `guardiao-shared` na 8100 (arquivo próprio em
+`/etc/nginx/sites-available/guardiao-demo`, sem tocar nos demais sites).
+Endereço alternativo direto: `http://187.77.36.21:8100` (bloqueado por alguns proxies).
+Credenciais do superadmin em `/root/guardiao-fiscal/.env.shared`.
 Demo por HTTP (`COOKIE_SECURE=false`) — para clientes reais, migrar ao modo produção com domínio+TLS.
 
 ### Pendências para o PRIMEIRO DEPLOY REAL (fora do escopo de código)
