@@ -206,6 +206,43 @@ export class AuthService {
     };
   }
 
+  /**
+   * Troca de senha do próprio usuário. Exige a senha atual e revoga TODAS as
+   * sessões (refresh tokens) — quem estiver com a senha antiga cai fora.
+   */
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
+    if (!user) throw new UnauthorizedException('Sessão inválida');
+
+    const ok = await argon2.verify(user.passwordHash, currentPassword);
+    if (!ok) {
+      await this.audit.log({
+        action: 'auth.password_change_failed',
+        entity: 'User',
+        entityId: userId,
+        userId,
+        tenantId: user.tenantId,
+      });
+      throw new UnauthorizedException('Senha atual incorreta');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: await argon2.hash(newPassword) },
+    });
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    await this.audit.log({
+      action: 'auth.password_changed',
+      entity: 'User',
+      entityId: userId,
+      userId,
+      tenantId: user.tenantId,
+    });
+  }
+
   private async issueTokens(
     userId: string,
     tenantId: string | null,

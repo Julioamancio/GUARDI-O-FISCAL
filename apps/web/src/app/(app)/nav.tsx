@@ -19,13 +19,19 @@ export function Nav({
   tenantName,
   isSuperadmin,
   isClient,
+  canManageUsers,
 }: {
   userName: string;
   tenantName: string;
   isSuperadmin: boolean;
   isClient: boolean;
+  canManageUsers: boolean;
 }) {
-  const LINKS = isClient ? CLIENT_LINKS : STAFF_LINKS;
+  const LINKS = isClient
+    ? CLIENT_LINKS
+    : canManageUsers
+      ? [...STAFF_LINKS, { href: '/equipe', label: 'Equipe' }]
+      : STAFF_LINKS;
   const pathname = usePathname();
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
@@ -80,7 +86,12 @@ export function Nav({
           )}
           <div className="hidden text-right sm:block">
             <p className="text-sm font-medium text-gray-800">{userName}</p>
-            <p className="text-xs text-gray-500">{tenantName}</p>
+            <p className="text-xs text-gray-500">
+              {tenantName} ·{' '}
+              <Link href="/senha" className="underline hover:text-brand-700">
+                trocar senha
+              </Link>
+            </p>
           </div>
           <button
             onClick={logout}

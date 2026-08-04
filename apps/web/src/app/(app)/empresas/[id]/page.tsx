@@ -2,12 +2,21 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import { AddObligationForm, GenerateTasksButton, ObligationToggle } from './company-actions';
+import {
+  ContactsManager,
+  EditCompanyForm,
+  PortalAccessManager,
+  ResponsiblesManager,
+  SimpleUser,
+} from './company-manage';
 
 interface CompanyDetail {
   id: string;
   razaoSocial: string;
   nomeFantasia: string | null;
   cnpj: string;
+  email: string | null;
+  phone: string | null;
   regimeTributario: string | null;
   uf: string | null;
   municipio: string | null;
@@ -17,6 +26,7 @@ interface CompanyDetail {
   tags: string[];
   contacts: Array<{ id: string; name: string; email: string | null; phone: string | null; role: string | null }>;
   responsibles: Array<{ id: string; area: string; user: { id: string; name: string } }>;
+  clientAccesses: Array<{ id: string; user: { id: string; name: string; email: string; isActive: boolean } }>;
   obligations: Array<{
     id: string;
     name: string;
@@ -62,6 +72,17 @@ export default async function EmpresaDetailPage({ params }: { params: Promise<{ 
   }
   const templates = await apiFetch<Template[]>('/obligation-templates');
 
+  // Lista de usuários (para responsáveis e portal) — só admins têm users.manage
+  let allUsers: SimpleUser[] = [];
+  try {
+    const users = await apiFetch<{ items: SimpleUser[] }>('/users?perPage=100');
+    allUsers = users.items;
+  } catch {
+    allUsers = [];
+  }
+  const staff = allUsers.filter((u) => !u.roles.some((r) => r.role.slug === 'client'));
+  const clientUsers = allUsers.filter((u) => u.roles.some((r) => r.role.slug === 'client'));
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
@@ -76,7 +97,8 @@ export default async function EmpresaDetailPage({ params }: { params: Promise<{ 
             {company.uf && ` · ${company.municipio ?? ''}/${company.uf}`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <EditCompanyForm company={company} />
           <Link
             href={`/empresas/${company.id}/timeline`}
             className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
@@ -134,33 +156,26 @@ export default async function EmpresaDetailPage({ params }: { params: Promise<{ 
 
         <div className="space-y-6">
           <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 className="mb-3 font-semibold text-gray-800">Responsáveis</h2>
-            {company.responsibles.length === 0 && (
-              <p className="text-sm text-gray-500">Nenhum responsável definido.</p>
-            )}
-            <ul className="space-y-1.5 text-sm">
-              {company.responsibles.map((r) => (
-                <li key={r.id} className="flex justify-between">
-                  <span className="text-gray-500">{r.area.toLowerCase()}</span>
-                  <span className="font-medium text-gray-800">{r.user.name}</span>
-                </li>
-              ))}
-            </ul>
+            <h2 className="mb-3 font-semibold text-gray-800">Responsáveis por área</h2>
+            <ResponsiblesManager
+              companyId={company.id}
+              responsibles={company.responsibles}
+              staff={staff}
+            />
+          </section>
+
+          <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 className="mb-3 font-semibold text-gray-800">Acesso ao portal (clientes)</h2>
+            <PortalAccessManager
+              companyId={company.id}
+              accesses={company.clientAccesses ?? []}
+              clientUsers={clientUsers}
+            />
           </section>
 
           <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h2 className="mb-3 font-semibold text-gray-800">Contatos do cliente</h2>
-            {company.contacts.length === 0 && <p className="text-sm text-gray-500">Nenhum contato cadastrado.</p>}
-            <ul className="space-y-2 text-sm">
-              {company.contacts.map((c) => (
-                <li key={c.id}>
-                  <p className="font-medium text-gray-800">
-                    {c.name} {c.role && <span className="font-normal text-gray-500">· {c.role}</span>}
-                  </p>
-                  <p className="text-xs text-gray-500">{[c.email, c.phone].filter(Boolean).join(' · ')}</p>
-                </li>
-              ))}
-            </ul>
+            <ContactsManager companyId={company.id} contacts={company.contacts} />
           </section>
 
           {company.observacoes && (

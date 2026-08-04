@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshDto } from './dto/auth.dto';
+import { ChangePasswordDto, LoginDto, RefreshDto } from './dto/auth.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AccessTokenPayload } from './auth.types';
@@ -47,5 +47,17 @@ export class AuthController {
   @ApiOperation({ summary: 'Dados do usuário autenticado' })
   me(@CurrentUser() user: AccessTokenPayload) {
     return this.authService.me(user.sub);
+  }
+
+  @Post('change-password')
+  @HttpCode(204)
+  @ApiBearerAuth()
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @ApiOperation({ summary: 'Troca a própria senha (revoga todas as sessões)' })
+  async changePassword(
+    @CurrentUser() user: AccessTokenPayload,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<void> {
+    await this.authService.changePassword(user.sub, dto.currentPassword, dto.newPassword);
   }
 }
