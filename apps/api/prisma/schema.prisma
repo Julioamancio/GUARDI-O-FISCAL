@@ -112,6 +112,29 @@ enum ResponsibleArea {
   FINANCEIRO
 }
 
+enum DocumentRequestStatus {
+  ABERTA
+  PARCIAL
+  CONCLUIDA
+  CANCELADA
+}
+
+enum RequestItemStatus {
+  PENDENTE
+  RECEBIDO
+  APROVADO
+  REJEITADO
+}
+
+enum NotificationType {
+  SOLICITACAO_CRIADA
+  LEMBRETE_DOCUMENTO
+  DOCUMENTO_RECEBIDO
+  DOCUMENTO_REJEITADO
+  DOCUMENTO_APROVADO
+  GENERICA
+}
+
 // ---------------------------------------------------------------------------
 // Planos e tenants
 // ---------------------------------------------------------------------------
@@ -200,13 +223,18 @@ model User {
   updatedAt        DateTime  @updatedAt
   deletedAt        DateTime?
 
-  tenant                  Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant                  Tenant?               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   roles                   UserRole[]
   refreshTokens           RefreshToken[]
   companyResponsibilities CompanyResponsible[]
-  responsibleObligations  Obligation[]         @relation("ObligationResponsible")
-  responsibleTasks        Task[]               @relation("TaskResponsible")
+  responsibleObligations  Obligation[]          @relation("ObligationResponsible")
+  responsibleTasks        Task[]                @relation("TaskResponsible")
   taskComments            TaskComment[]
+  clientAccesses          CompanyClientAccess[]
+  createdRequests         DocumentRequest[]     @relation("RequestCreator")
+  reviewedItems           DocumentRequestItem[] @relation("ItemReviewer")
+  uploadedDocuments       Document[]            @relation("DocumentUploader")
+  notifications           Notification[]
 
   @@unique([tenantId, email])
   @@index([email])
@@ -309,11 +337,14 @@ model Company {
   updatedAt          DateTime          @updatedAt
   deletedAt          DateTime?
 
-  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  contacts     CompanyContact[]
-  responsibles CompanyResponsible[]
-  obligations  Obligation[]
-  tasks        Task[]
+  tenant           Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contacts         CompanyContact[]
+  responsibles     CompanyResponsible[]
+  obligations      Obligation[]
+  tasks            Task[]
+  clientAccesses   CompanyClientAccess[]
+  documentRequests DocumentRequest[]
+  documents        Document[]
 
   @@unique([tenantId, cnpj])
   @@index([tenantId, status])
@@ -490,6 +521,152 @@ model TaskComment {
   @@index([tenantId])
   @@index([taskId])
   @@map("task_comments")
+}
+
+// ---------------------------------------------------------------------------
+// Fase 3 — Solicitação de documentos, arquivos (MinIO) e portal do cliente
+// ---------------------------------------------------------------------------
+
+/** Vínculo do usuário-cliente (papel client) com as empresas que ele enxerga no portal. */
+model CompanyClientAccess {
+  id        String   @id @default(uuid())
+  tenantId  String
+  companyId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("company_client_accesses")
+}
+
+model DocumentRequest {
+  id               String                @id @default(uuid())
+  tenantId         String
+  companyId        String
+  title            String
+  message          String?
+  competence       String? // YYYY-MM
+  dueDate          DateTime?             @db.Date
+  status           DocumentRequestStatus @default(ABERTA)
+  remindersEnabled Boolean               @default(true)
+  createdById      String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  deletedAt        DateTime?
+
+  company   Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy User?                 @relation("RequestCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  items     DocumentRequestItem[]
+  reminders DocumentReminder[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, companyId])
+  @@map("document_requests")
+}
+
+model DocumentRequestItem {
+  id              String            @id @default(uuid())
+  tenantId        String
+  requestId       String
+  name            String
+  description     String?
+  status          RequestItemStatus @default(PENDENTE)
+  rejectionReason String?
+  reviewedById    String?
+  reviewedAt      DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  request    DocumentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  reviewedBy User?           @relation("ItemReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  documents  Document[]
+
+  @@index([tenantId])
+  @@index([requestId])
+  @@map("document_request_items")
+}
+
+model Document {
+  id            String    @id @default(uuid())
+  tenantId      String
+  companyId     String
+  requestItemId String?
+  name          String
+  category      String?
+  competence    String? // YYYY-MM
+  uploadedById  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  company     Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  requestItem DocumentRequestItem? @relation(fields: [requestItemId], references: [id], onDelete: SetNull)
+  uploadedBy  User?                @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  versions    DocumentVersion[]
+
+  @@index([tenantId, companyId])
+  @@index([tenantId, competence])
+  @@map("documents")
+}
+
+/** Versões imutáveis: reenvio do mesmo documento cria versão nova, nunca sobrescreve. */
+model DocumentVersion {
+  id           String   @id @default(uuid())
+  tenantId     String
+  documentId   String
+  version      Int
+  objectKey    String // chave no MinIO (bucket privado; download só por link assinado)
+  size         Int
+  mimeType     String
+  checksum     String // sha256 do conteúdo
+  uploadedById String?
+  createdAt    DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, version])
+  @@index([tenantId])
+  @@map("document_versions")
+}
+
+/** Registro de lembrete enviado. UNIQUE (requestId, stage) = anti-spam por construção. */
+model DocumentReminder {
+  id        String   @id @default(uuid())
+  tenantId  String
+  requestId String
+  stage     String // D5 | D3 | D0 | ATRASO_YYYY-MM-DD
+  sentAt    DateTime @default(now())
+
+  request DocumentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, stage])
+  @@index([tenantId])
+  @@map("document_reminders")
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  tenantId    String?
+  userId      String?
+  type        NotificationType
+  title       String
+  body        String?
+  meta        Json?
+  readAt      DateTime?
+  emailTo     String?
+  emailSentAt DateTime?
+  emailError  String?
+  createdAt   DateTime         @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, userId, readAt])
+  @@map("notifications")
 }
 
 // ---------------------------------------------------------------------------

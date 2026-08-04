@@ -37,19 +37,41 @@ export type PermissionSlug = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export const QUEUES = {
   NOTIFICATIONS: 'notifications',
   RECURRENCE: 'recurrence',
+  REMINDERS: 'reminders',
   MAINTENANCE: 'maintenance',
 } as const;
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
 
-/** Job de notificação (fase 3 liga o envio real de e-mail). */
+/** Job de envio de e-mail (worker atualiza a Notification com o resultado). */
 export interface NotificationJob {
-  tenantId: string;
-  userId?: string;
-  channel: 'email' | 'system';
-  template: string;
+  notificationId: string;
   to: string;
-  data: Record<string, unknown>;
+  subject: string;
+  text: string;
+  html?: string;
 }
+
+/** Tipos de documento mais solicitados (sugestões da UI; texto livre também vale). */
+export const COMMON_DOCUMENT_TYPES = [
+  'Extratos bancários',
+  'Notas fiscais emitidas',
+  'Notas fiscais recebidas',
+  'Arquivos XML',
+  'Notas de serviços',
+  'Comprovantes de pagamento',
+  'Folha de pagamento',
+  'Documentos de admissão',
+  'Documentos de demissão',
+  'Movimentações financeiras',
+  'Contratos',
+  'Inventário',
+] as const;
+
+/** Upload: extensões e MIME permitidos + tamanho máximo (requisito 13). */
+export const UPLOAD_ALLOWED_EXTENSIONS = [
+  'pdf', 'xml', 'xls', 'xlsx', 'csv', 'jpg', 'jpeg', 'png', 'zip', 'txt', 'ofx',
+] as const;
+export const UPLOAD_MAX_BYTES = 25 * 1024 * 1024; // 25 MB
 
 /** Cores de status usadas em todo o produto (requisito 7). */
 export const STATUS_COLORS = {
