@@ -54,6 +54,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Protege páginas; /api/session e /api/proxy cuidam da própria autenticação
-  matcher: ['/((?!api/session|api/proxy|_next/static|_next/image|favicon.ico).*)'],
+  // Protege páginas; /api/session e /api/proxy cuidam da própria autenticação.
+  // ".*\\..*" libera arquivos estáticos (mascote.svg, imagens, fontes...).
+  matcher: ['/((?!api/session|api/proxy|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 };
