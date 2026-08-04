@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { StatusSelect } from './status-select';
 import { ExportButtons } from '../export-buttons';
+import { NewTaskForm } from './new-task-form';
+import { KanbanBoard } from './kanban-board';
 
 interface TaskRow {
   id: string;
@@ -46,12 +48,16 @@ export default async function TarefasPage({
     status?: string;
     companyId?: string;
     competence?: string;
+    department?: string;
     dueSoon?: string;
     page?: string;
+    view?: string;
   }>;
 }) {
   const params = await searchParams;
+  const isKanban = params.view === 'kanban';
   const query = new URLSearchParams();
+  if (params.department) query.set('department', params.department);
   if (params.status) query.set('status', params.status);
   if (params.companyId) query.set('companyId', params.companyId);
   if (params.competence) query.set('competence', params.competence);
@@ -59,19 +65,54 @@ export default async function TarefasPage({
     const limit = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     query.set('dueBefore', limit.toISOString().slice(0, 10));
   }
-  query.set('page', params.page ?? '1');
-  query.set('perPage', '25');
+  query.set('page', isKanban ? '1' : (params.page ?? '1'));
+  query.set('perPage', isKanban ? '100' : '25');
 
   const data = await apiFetch<{ items: TaskRow[]; total: number; page: number; perPage: number }>(
     `/tasks?${query.toString()}`,
   );
+
+  let companies: Array<{ id: string; razaoSocial: string }> = [];
+  try {
+    const list = await apiFetch<{ items: Array<{ id: string; razaoSocial: string }> }>(
+      '/companies?perPage=100',
+    );
+    companies = list.items;
+  } catch {
+    companies = [];
+  }
+
+  const viewLink = (view: string) => {
+    const q = new URLSearchParams(params as Record<string, string>);
+    if (view === 'kanban') q.set('view', 'kanban');
+    else q.delete('view');
+    q.delete('page');
+    return `/tarefas?${q.toString()}`;
+  };
   const totalPages = Math.max(1, Math.ceil(data.total / data.perPage));
   const today = new Date().toISOString().slice(0, 10);
 
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-brand-700">Tarefas</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-brand-700">Tarefas</h1>
+          <div className="flex rounded-lg border border-gray-300 p-0.5 text-xs font-semibold">
+            <Link
+              href={viewLink('lista')}
+              className={`rounded-md px-3 py-1 ${!isKanban ? 'bg-brand-600 text-white' : 'text-gray-600 hover:text-brand-700'}`}
+            >
+              Lista
+            </Link>
+            <Link
+              href={viewLink('kanban')}
+              className={`rounded-md px-3 py-1 ${isKanban ? 'bg-brand-600 text-white' : 'text-gray-600 hover:text-brand-700'}`}
+            >
+              Kanban
+            </Link>
+          </div>
+          {companies.length > 0 && <NewTaskForm companies={companies} />}
+        </div>
         <div className="flex items-center gap-4">
           <ExportButtons
             path={`/reports/tasks?x=1${params.competence ? `&competence=${params.competence}` : ''}${params.status ? `&status=${params.status}` : ''}${params.companyId ? `&companyId=${params.companyId}` : ''}`}
@@ -145,7 +186,11 @@ export default async function TarefasPage({
               const isLate = task.status === 'VENCIDA' || (dueIso < today && task.status !== 'CONCLUIDA' && task.status !== 'CANCELADA');
               return (
                 <tr key={task.id} className="border-b border-gray-100 last:border-0 hover:bg-brand-50/40">
-                  <td className="px-4 py-3 font-medium text-gray-800">{task.title}</td>
+                  <td className="px-4 py-3">
+                    <Link href={`/tarefas/${task.id}`} className="font-medium text-gray-800 hover:text-brand-700 hover:underline">
+                      {task.title}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3">
                     <Link href={`/empresas/${task.company.id}`} className="text-brand-700 hover:underline">
                       {task.company.razaoSocial}

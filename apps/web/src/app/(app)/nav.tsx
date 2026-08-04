@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { NotificationsBell } from './notifications-bell';
 
 const STAFF_LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -10,6 +11,7 @@ const STAFF_LINKS = [
   { href: '/empresas', label: 'Empresas' },
   { href: '/tarefas', label: 'Tarefas' },
   { href: '/solicitacoes', label: 'Solicitações' },
+  { href: '/documentos', label: 'Documentos' },
 ];
 
 const CLIENT_LINKS = [{ href: '/portal', label: 'Portal' }];
@@ -75,6 +77,7 @@ export function Nav({
           )}
         </div>
         <div className="flex items-center gap-3">
+          <NotificationsBell />
           {!isClient && !isSuperadmin && (
             <form action="/busca" method="get" className="hidden md:block">
               <input

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { apiFetch, UnauthorizedError } from '@/lib/api';
 import type { Me } from '../layout';
 import { NewTenantForm } from './new-tenant-form';
+import { TenantStatusButton } from './tenant-status-button';
 import { ChartCard, Donut, HBars, StackedColumns, VIZ } from './charts';
 
 interface TaskSummary {
@@ -95,6 +96,7 @@ export default async function DashboardPage() {
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Usuários</th>
                 <th className="px-4 py-3 text-right">Empresas</th>
+                <th className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -118,6 +120,9 @@ export default async function DashboardPage() {
                   </td>
                   <td className="px-4 py-3 text-right">{tenant._count.users}</td>
                   <td className="px-4 py-3 text-right">{tenant._count.companies}</td>
+                  <td className="px-4 py-3 text-right">
+                    <TenantStatusButton tenantId={tenant.id} status={tenant.status} name={tenant.razaoSocial} />
+                  </td>
                 </tr>
               ))}
             </tbody>

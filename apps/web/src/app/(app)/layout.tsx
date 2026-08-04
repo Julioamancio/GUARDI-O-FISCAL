@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { apiFetch, UnauthorizedError } from '@/lib/api';
 import { Nav } from './nav';
+import { Footer } from '../footer';
 
 export interface Me {
   id: string;
@@ -22,7 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <Nav
         userName={me.name}
         tenantName={me.tenant?.razaoSocial ?? 'Administração da Plataforma'}
@@ -30,7 +31,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         isClient={me.roles.includes('client')}
         canManageUsers={me.permissions.includes('users.manage')}
       />
-      <main className="mx-auto max-w-6xl p-6">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 p-6">{children}</main>
+      <Footer />
     </div>
   );
 }
