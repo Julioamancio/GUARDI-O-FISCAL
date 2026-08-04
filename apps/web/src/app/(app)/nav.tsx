@@ -48,7 +48,7 @@ export function Nav({
               className="h-8 w-8 object-contain"
               onError={(e) => (e.currentTarget.style.display = 'none')}
             />
-            Guardião Fiscal
+            Radar Contábil
           </Link>
           {!isSuperadmin && (
             <nav className="flex items-center gap-1">

@@ -33,7 +33,7 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('Guardião Fiscal — API')
+      .setTitle('Radar Contábil — API')
       .setDescription('Camada de controle, auditoria e prevenção fiscal para escritórios de contabilidade')
       .setVersion('0.1.0')
       .addBearerAuth()
@@ -43,7 +43,7 @@ async function bootstrap() {
 
   const port = Number(process.env.API_PORT ?? 3001);
   await app.listen(port, '0.0.0.0');
-  console.log(`API Guardião Fiscal ouvindo na porta ${port}`);
+  console.log(`API Radar Contábil ouvindo na porta ${port}`);
 }
 
 void bootstrap();

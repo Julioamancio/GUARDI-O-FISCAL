@@ -2,7 +2,7 @@
   "name": "@guardiao/worker",
   "version": "0.1.0",
   "private": true,
-  "description": "Guardião Fiscal — worker de processamento assíncrono (BullMQ)",
+  "description": "Radar Contábil — worker de processamento assíncrono (BullMQ)",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start:dev": "ts-node src/main.ts",

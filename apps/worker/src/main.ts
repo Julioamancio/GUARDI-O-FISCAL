@@ -1,5 +1,5 @@
 /**
- * Worker do Guardião Fiscal.
+ * Worker do Radar Contábil.
  * Filas:
  *  - recurrence: diário 06:00 BRT — gera tarefas recorrentes e marca vencidas;
  *  - reminders:  diário 07:00 BRT — cobranças automáticas de documentos;
@@ -52,7 +52,7 @@ const notificationsWorker = new Worker<NotificationJob>(
     }
     try {
       await mailTransport.sendMail({
-        from: process.env.SMTP_FROM ?? 'Guardião Fiscal <nao-responda@localhost>',
+        from: process.env.SMTP_FROM ?? 'Radar Contábil <nao-responda@localhost>',
         to,
         subject,
         text,

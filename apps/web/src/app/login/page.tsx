@@ -123,11 +123,11 @@ export default function LoginPage() {
         <div className="relative flex items-center gap-3">
           <img
             src="/mascote.png"
-            alt="Mascote do Guardião Fiscal"
+            alt="Mascote do Radar Contábil"
             className="h-12 w-12 object-contain drop-shadow-lg"
             onError={(e) => (e.currentTarget.style.display = 'none')}
           />
-          <p className="text-2xl font-bold tracking-tight">Guardião Fiscal</p>
+          <p className="text-2xl font-bold tracking-tight">Radar Contábil</p>
         </div>
 
         <div className="relative max-w-lg">
@@ -179,7 +179,7 @@ export default function LoginPage() {
               className="mx-auto mb-3 h-24 w-auto object-contain"
               onError={(e) => (e.currentTarget.style.display = 'none')}
             />
-            <h1 className="text-3xl font-bold text-brand-700">Guardião Fiscal</h1>
+            <h1 className="text-3xl font-bold text-brand-700">Radar Contábil</h1>
             <p className="mt-2 text-sm text-gray-600">
               Nenhuma obrigação esquecida. Nenhum documento perdido.
             </p>

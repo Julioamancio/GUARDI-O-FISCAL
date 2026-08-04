@@ -1,4 +1,4 @@
-# GUARDIÃO FISCAL — Planejamento Técnico
+# RADAR CONTÁBIL — Planejamento Técnico
 
 > Versão 1.0 — 04/08/2026. Este documento é a base de decisão do projeto.
 > Alterações de arquitetura devem ser registradas aqui com justificativa.

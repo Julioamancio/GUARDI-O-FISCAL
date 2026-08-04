@@ -2,7 +2,7 @@
   "name": "@guardiao/web",
   "version": "0.1.0",
   "private": true,
-  "description": "Guardião Fiscal — frontend (Next.js)",
+  "description": "Radar Contábil — frontend (Next.js)",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",

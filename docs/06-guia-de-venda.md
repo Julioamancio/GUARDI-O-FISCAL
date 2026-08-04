@@ -1,4 +1,4 @@
-# Guia de venda do Guardião Fiscal (em português de dono de negócio)
+# Guia de venda do Radar Contábil (em português de dono de negócio)
 
 ## O QUE você tem nas mãos
 
@@ -25,7 +25,7 @@ O dia a dia de um escritório de contabilidade é assim:
 3. Quando dá problema, começa a briga do "eu te pedi / você não mandou" — e o
    contador raramente tem **prova** organizada.
 
-**O Guardião Fiscal resolve exatamente esses três pontos:**
+**O Radar Contábil resolve exatamente esses três pontos:**
 
 - O calendário de obrigações gera as tarefas **sozinho**, todo mês, já com a
   data certa (contando feriado e fim de semana). Um painel com cores mostra em

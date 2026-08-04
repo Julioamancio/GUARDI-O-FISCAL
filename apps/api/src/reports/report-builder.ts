@@ -22,7 +22,7 @@ export function buildCsv(report: TabularReport): Buffer {
 
 export async function buildXlsx(report: TabularReport): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'Guardião Fiscal';
+  workbook.creator = 'Radar Contábil';
   const sheet = workbook.addWorksheet(report.title.slice(0, 31));
   sheet.addRow([report.title]).font = { bold: true, size: 14 };
   if (report.subtitle) sheet.addRow([report.subtitle]).font = { size: 10, color: { argb: 'FF666666' } };
@@ -82,7 +82,7 @@ export function buildPdf(report: TabularReport): Promise<Buffer> {
     report.rows.forEach((row) => drawRow(row.map(cell), false));
 
     doc.fontSize(7).fillColor('#999999');
-    doc.text(`Gerado pelo Guardião Fiscal em ${new Date().toLocaleString('pt-BR')}`, 40, doc.page.height - 50);
+    doc.text(`Gerado pelo Radar Contábil em ${new Date().toLocaleString('pt-BR')}`, 40, doc.page.height - 50);
     doc.end();
   });
 }
