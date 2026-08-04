@@ -1,7 +1,10 @@
 /**
  * Contratos compartilhados entre api, web e worker.
- * Fonte única de verdade para papéis, permissões e nomes de filas.
+ * Fonte única de verdade para papéis, permissões, filas e o motor de datas.
  */
+
+export * from './due-date';
+export * from './cnpj';
 
 export const ROLES = {
   SUPERADMIN: 'superadmin',

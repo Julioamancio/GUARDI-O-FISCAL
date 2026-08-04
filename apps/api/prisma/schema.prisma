@@ -54,6 +54,64 @@ enum RiskLevel {
   CRITICAL
 }
 
+enum Department {
+  FISCAL
+  CONTABIL
+  PESSOAL
+  FINANCEIRO
+  SOCIETARIO
+  OUTRO
+}
+
+enum Sphere {
+  FEDERAL
+  ESTADUAL
+  MUNICIPAL
+  TRABALHISTA
+  PREVIDENCIARIA
+  OUTRA
+}
+
+enum Periodicity {
+  MENSAL
+  TRIMESTRAL
+  SEMESTRAL
+  ANUAL
+}
+
+enum TaskStatus {
+  NAO_INICIADA
+  AGUARDANDO_DOCUMENTOS
+  EM_ANDAMENTO
+  EM_CONFERENCIA
+  AGUARDANDO_APROVACAO
+  CONCLUIDA
+  VENCIDA
+  BLOQUEADA
+  CANCELADA
+}
+
+enum TaskPriority {
+  BAIXA
+  MEDIA
+  ALTA
+  CRITICA
+}
+
+enum HolidayScope {
+  NACIONAL
+  ESTADUAL
+  MUNICIPAL
+}
+
+enum ResponsibleArea {
+  INTERNO
+  FISCAL
+  CONTABIL
+  PESSOAL
+  FINANCEIRO
+}
+
 // ---------------------------------------------------------------------------
 // Planos e tenants
 // ---------------------------------------------------------------------------
@@ -142,9 +200,13 @@ model User {
   updatedAt        DateTime  @updatedAt
   deletedAt        DateTime?
 
-  tenant        Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  roles         UserRole[]
-  refreshTokens RefreshToken[]
+  tenant                  Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roles                   UserRole[]
+  refreshTokens           RefreshToken[]
+  companyResponsibilities CompanyResponsible[]
+  responsibleObligations  Obligation[]         @relation("ObligationResponsible")
+  responsibleTasks        Task[]               @relation("TaskResponsible")
+  taskComments            TaskComment[]
 
   @@unique([tenantId, email])
   @@index([email])
@@ -229,10 +291,16 @@ model Company {
   inscricaoEstadual  String?
   inscricaoMunicipal String?
   cnaePrincipal      String?
+  cnaesSecundarios   String[]          @default([])
   regimeTributario   RegimeTributario?
+  enquadramento      String?
+  tipoJuridico       String?
+  email              String?
+  phone              String?
   uf                 String?           @db.VarChar(2)
   municipio          String?
   dataAbertura       DateTime?
+  funcionariosCount  Int?
   status             CompanyStatus     @default(ACTIVE)
   riskLevel          RiskLevel         @default(LOW)
   observacoes        String?
@@ -241,11 +309,187 @@ model Company {
   updatedAt          DateTime          @updatedAt
   deletedAt          DateTime?
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contacts     CompanyContact[]
+  responsibles CompanyResponsible[]
+  obligations  Obligation[]
+  tasks        Task[]
 
   @@unique([tenantId, cnpj])
   @@index([tenantId, status])
   @@map("companies")
+}
+
+// tenantId é denormalizado nas tabelas filhas para o filtro automático de
+// isolamento; a integridade referencial de tenant flui pela FK de company/task.
+
+model CompanyContact {
+  id        String   @id @default(uuid())
+  tenantId  String
+  companyId String
+  name      String
+  email     String?
+  phone     String?
+  role      String? // ex.: sócio, financeiro, RH
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@map("company_contacts")
+}
+
+model CompanyResponsible {
+  id        String          @id @default(uuid())
+  tenantId  String
+  companyId String
+  userId    String
+  area      ResponsibleArea
+  createdAt DateTime        @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, area])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("company_responsibles")
+}
+
+// ---------------------------------------------------------------------------
+// Feriados (base do cálculo de dias úteis). tenantId NULL = feriado nacional
+// mantido pela plataforma; tenants cadastram estaduais/municipais próprios.
+// ---------------------------------------------------------------------------
+
+model Holiday {
+  id        String       @id @default(uuid())
+  tenantId  String?
+  date      DateTime     @db.Date
+  name      String
+  scope     HolidayScope
+  uf        String?      @db.VarChar(2)
+  municipio String?
+  createdAt DateTime     @default(now())
+
+  @@index([date])
+  @@index([tenantId])
+  @@map("holidays")
+}
+
+// ---------------------------------------------------------------------------
+// Obrigações: template (catálogo global ou do tenant) -> obrigação por empresa
+// dueRule (JSON): { day: number | "LAST_DAY" | "LAST_BUSINESS_DAY",
+//                   monthOffset: number, adjustment: "NONE"|"ANTICIPATE"|"POSTPONE" }
+// ---------------------------------------------------------------------------
+
+model ObligationTemplate {
+  id              String             @id @default(uuid())
+  tenantId        String? // NULL = catálogo global da plataforma
+  slug            String             @unique
+  name            String
+  description     String?
+  department      Department
+  sphere          Sphere
+  periodicity     Periodicity
+  anchorMonth     Int                @default(1) // mês-base p/ trimestral/semestral/anual
+  dueRule         Json
+  regimes         RegimeTributario[] @default([])
+  defaultPriority TaskPriority       @default(MEDIA)
+  checklist       Json               @default("[]")
+  notes           String?
+  isActive        Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  obligations Obligation[]
+
+  @@index([tenantId])
+  @@map("obligation_templates")
+}
+
+model Obligation {
+  id            String       @id @default(uuid())
+  tenantId      String
+  companyId     String
+  templateId    String?
+  name          String
+  department    Department
+  sphere        Sphere
+  periodicity   Periodicity
+  anchorMonth   Int          @default(1)
+  dueRule       Json
+  priority      TaskPriority @default(MEDIA)
+  checklist     Json         @default("[]")
+  responsibleId String?
+  active        Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  template    ObligationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  responsible User?               @relation("ObligationResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
+  tasks       Task[]
+
+  @@index([tenantId, companyId])
+  @@index([tenantId, active])
+  @@map("obligations")
+}
+
+// ---------------------------------------------------------------------------
+// Tarefas. Geradas pelo motor de recorrência (obligationId preenchido, com
+// unicidade por competência) ou criadas manualmente (obligationId NULL).
+// ---------------------------------------------------------------------------
+
+model Task {
+  id            String       @id @default(uuid())
+  tenantId      String
+  companyId     String
+  obligationId  String?
+  title         String
+  description   String?
+  department    Department?
+  competence    String // formato YYYY-MM
+  dueDate       DateTime     @db.Date
+  status        TaskStatus   @default(NAO_INICIADA)
+  priority      TaskPriority @default(MEDIA)
+  responsibleId String?
+  checklist     Json         @default("[]")
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  obligation  Obligation? @relation(fields: [obligationId], references: [id], onDelete: SetNull)
+  responsible User?       @relation("TaskResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
+  comments    TaskComment[]
+
+  @@unique([obligationId, competence]) // idempotência do motor de recorrência
+  @@index([tenantId, status])
+  @@index([tenantId, dueDate])
+  @@index([tenantId, companyId])
+  @@index([tenantId, responsibleId])
+  @@map("tasks")
+}
+
+model TaskComment {
+  id        String   @id @default(uuid())
+  tenantId  String
+  taskId    String
+  userId    String?
+  body      String
+  createdAt DateTime @default(now())
+
+  task Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([taskId])
+  @@map("task_comments")
 }
 
 // ---------------------------------------------------------------------------

@@ -3,8 +3,9 @@
  * Cria: permissões, papéis do sistema, planos, superadmin e tenant de demonstração.
  * Credenciais do superadmin vêm de SEED_SUPERADMIN_EMAIL / SEED_SUPERADMIN_PASSWORD.
  */
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
+import { nationalHolidays } from '@guardiao/shared';
 
 const prisma = new PrismaClient();
 
@@ -107,6 +108,140 @@ async function main() {
   } else {
     console.log('Superadmin já existe — mantido.');
   }
+
+  // Feriados nacionais (globais, tenantId NULL) — base do cálculo de dias úteis
+  for (const year of [2025, 2026, 2027, 2028]) {
+    for (const holiday of nationalHolidays(year)) {
+      const date = new Date(`${holiday.date}T00:00:00.000Z`);
+      const exists = await prisma.holiday.findFirst({
+        where: { tenantId: null, date, scope: 'NACIONAL' },
+      });
+      if (!exists) {
+        await prisma.holiday.create({
+          data: { tenantId: null, date, name: holiday.name, scope: 'NACIONAL' },
+        });
+      }
+    }
+  }
+  console.log('Feriados nacionais 2025–2028 verificados.');
+
+  // Catálogo global de templates de obrigações.
+  // ATENÇÃO: vencimentos estaduais/municipais variam — os templates marcam isso
+  // em `notes` e a regra é ajustável por obrigação. Validar com contador (req. 37.10).
+  const TEMPLATES: Array<{
+    slug: string;
+    name: string;
+    department: 'FISCAL' | 'CONTABIL' | 'PESSOAL';
+    sphere: 'FEDERAL' | 'ESTADUAL' | 'MUNICIPAL' | 'TRABALHISTA' | 'PREVIDENCIARIA';
+    periodicity: 'MENSAL' | 'ANUAL';
+    anchorMonth?: number;
+    dueRule: Prisma.InputJsonValue;
+    regimes: Array<'SIMPLES_NACIONAL' | 'LUCRO_PRESUMIDO' | 'LUCRO_REAL' | 'MEI'>;
+    defaultPriority: 'MEDIA' | 'ALTA' | 'CRITICA';
+    notes?: string;
+  }> = [
+    {
+      slug: 'das-simples-nacional',
+      name: 'DAS — Simples Nacional',
+      department: 'FISCAL', sphere: 'FEDERAL', periodicity: 'MENSAL',
+      dueRule: { day: 20, monthOffset: 1, adjustment: 'POSTPONE' },
+      regimes: ['SIMPLES_NACIONAL', 'MEI'], defaultPriority: 'ALTA',
+      notes: 'Dia 20 do mês seguinte; prorroga para o dia útil seguinte (Res. CGSN 140/2018).',
+    },
+    {
+      slug: 'fgts-mensal',
+      name: 'FGTS — recolhimento mensal',
+      department: 'PESSOAL', sphere: 'TRABALHISTA', periodicity: 'MENSAL',
+      dueRule: { day: 20, monthOffset: 1, adjustment: 'ANTICIPATE' },
+      regimes: ['SIMPLES_NACIONAL', 'LUCRO_PRESUMIDO', 'LUCRO_REAL'], defaultPriority: 'ALTA',
+      notes: 'Até o dia 20 do mês seguinte; antecipa quando não for dia útil (Lei 14.438/2022).',
+    },
+    {
+      slug: 'dctfweb-mensal',
+      name: 'DCTFWeb — declaração mensal',
+      department: 'FISCAL', sphere: 'FEDERAL', periodicity: 'MENSAL',
+      dueRule: { day: 25, monthOffset: 1, adjustment: 'ANTICIPATE' },
+      regimes: ['SIMPLES_NACIONAL', 'LUCRO_PRESUMIDO', 'LUCRO_REAL'], defaultPriority: 'ALTA',
+      notes: 'Até o dia 25 do mês seguinte; antecipa em dia não útil.',
+    },
+    {
+      slug: 'irrf-darf-mensal',
+      name: 'IRRF — DARF mensal',
+      department: 'FISCAL', sphere: 'FEDERAL', periodicity: 'MENSAL',
+      dueRule: { day: 20, monthOffset: 1, adjustment: 'ANTICIPATE' },
+      regimes: ['LUCRO_PRESUMIDO', 'LUCRO_REAL', 'SIMPLES_NACIONAL'], defaultPriority: 'MEDIA',
+      notes: 'Regra geral: até o dia 20 do mês seguinte ao fato gerador; antecipa.',
+    },
+    {
+      slug: 'efd-contribuicoes',
+      name: 'EFD-Contribuições',
+      department: 'FISCAL', sphere: 'FEDERAL', periodicity: 'MENSAL',
+      dueRule: { businessDay: 10, monthOffset: 2, adjustment: 'NONE' },
+      regimes: ['LUCRO_PRESUMIDO', 'LUCRO_REAL'], defaultPriority: 'MEDIA',
+      notes: '10º dia útil do 2º mês subsequente à competência.',
+    },
+    {
+      slug: 'esocial-folha',
+      name: 'eSocial — fechamento da folha',
+      department: 'PESSOAL', sphere: 'TRABALHISTA', periodicity: 'MENSAL',
+      dueRule: { day: 15, monthOffset: 1, adjustment: 'ANTICIPATE' },
+      regimes: ['SIMPLES_NACIONAL', 'LUCRO_PRESUMIDO', 'LUCRO_REAL'], defaultPriority: 'ALTA',
+      notes: 'Eventos periódicos até o dia 15 do mês seguinte; antecipa.',
+    },
+    {
+      slug: 'icms-apuracao',
+      name: 'ICMS — apuração e recolhimento',
+      department: 'FISCAL', sphere: 'ESTADUAL', periodicity: 'MENSAL',
+      dueRule: { day: 20, monthOffset: 1, adjustment: 'ANTICIPATE' },
+      regimes: ['LUCRO_PRESUMIDO', 'LUCRO_REAL'], defaultPriority: 'ALTA',
+      notes: 'ATENÇÃO: o vencimento varia por UF/CNAE — ajuste a regra ao criar a obrigação.',
+    },
+    {
+      slug: 'iss-mensal',
+      name: 'ISS — recolhimento mensal',
+      department: 'FISCAL', sphere: 'MUNICIPAL', periodicity: 'MENSAL',
+      dueRule: { day: 10, monthOffset: 1, adjustment: 'POSTPONE' },
+      regimes: ['LUCRO_PRESUMIDO', 'LUCRO_REAL', 'SIMPLES_NACIONAL'], defaultPriority: 'MEDIA',
+      notes: 'ATENÇÃO: o vencimento varia por município — ajuste a regra ao criar a obrigação.',
+    },
+    {
+      slug: 'defis-anual',
+      name: 'DEFIS — declaração anual do Simples',
+      department: 'CONTABIL', sphere: 'FEDERAL', periodicity: 'ANUAL', anchorMonth: 12,
+      dueRule: { day: 31, monthOffset: 3, adjustment: 'NONE' },
+      regimes: ['SIMPLES_NACIONAL'], defaultPriority: 'ALTA',
+      notes: 'Competência = dezembro do ano-base; entrega até 31/03 do ano seguinte.',
+    },
+    {
+      slug: 'ecf-anual',
+      name: 'ECF — Escrituração Contábil Fiscal',
+      department: 'CONTABIL', sphere: 'FEDERAL', periodicity: 'ANUAL', anchorMonth: 12,
+      dueRule: { day: 'LAST_BUSINESS_DAY', monthOffset: 7, adjustment: 'NONE' },
+      regimes: ['LUCRO_PRESUMIDO', 'LUCRO_REAL'], defaultPriority: 'ALTA',
+      notes: 'Até o último dia útil de julho do ano seguinte ao ano-base.',
+    },
+  ];
+
+  for (const t of TEMPLATES) {
+    await prisma.obligationTemplate.upsert({
+      where: { slug: t.slug },
+      update: { name: t.name, notes: t.notes, dueRule: t.dueRule },
+      create: {
+        slug: t.slug,
+        name: t.name,
+        tenantId: null,
+        department: t.department,
+        sphere: t.sphere,
+        periodicity: t.periodicity,
+        anchorMonth: t.anchorMonth ?? 1,
+        dueRule: t.dueRule,
+        regimes: t.regimes,
+        defaultPriority: t.defaultPriority,
+        notes: t.notes,
+      },
+    });
+  }
+  console.log(`Catálogo de templates de obrigações: ${TEMPLATES.length} verificados.`);
 
   console.log('Seed concluído.');
 }
