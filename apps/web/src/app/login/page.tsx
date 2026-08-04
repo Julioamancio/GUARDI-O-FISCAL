@@ -158,19 +158,16 @@ export default function LoginPage() {
           </ul>
         </div>
 
-        <div className="relative flex items-end justify-end">
-          <img
-            src="/mascote.png"
-            alt=""
-            aria-hidden
-            className="pointer-events-none -mb-6 -mr-2 h-56 w-auto object-contain drop-shadow-2xl"
-            onError={(e) => (e.currentTarget.style.display = 'none')}
-          />
-        </div>
       </section>
 
-      {/* Cartão de entrada */}
+      {/* Cartão de entrada com o mascote ao lado */}
       <section className="flex w-full items-center justify-center bg-gray-50 p-6 lg:w-1/2">
+        <img
+          src="/mascote.png"
+          alt="Mascote do Radar Contábil"
+          className="mr-8 hidden h-96 w-auto object-contain drop-shadow-2xl md:block"
+          onError={(e) => (e.currentTarget.style.display = 'none')}
+        />
         <div className="w-full max-w-md">
           <div className="mb-8 text-center lg:hidden">
             <img
