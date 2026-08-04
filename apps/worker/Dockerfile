@@ -14,10 +14,12 @@ COPY apps/worker/package.json apps/worker/
 RUN pnpm install --filter @guardiao/worker --filter @guardiao/shared --frozen-lockfile
 COPY packages/shared packages/shared
 COPY apps/worker apps/worker
-# O worker usa o Prisma Client gerado a partir do schema da API
-COPY apps/api/prisma apps/api/prisma
+# O worker usa o Prisma Client gerado a partir do schema da API. O schema é
+# copiado para DENTRO do worker: o prisma generate resolve o projeto pela pasta
+# do schema, e apps/api não tem node_modules nesta imagem.
+COPY apps/api/prisma/schema.prisma apps/worker/prisma/schema.prisma
 RUN pnpm --filter @guardiao/shared build \
- && pnpm --filter @guardiao/worker exec prisma generate --schema ../api/prisma/schema.prisma \
+ && pnpm --filter @guardiao/worker exec prisma generate \
  && pnpm --filter @guardiao/worker build
 
 FROM base AS runtime
