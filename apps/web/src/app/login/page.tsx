@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
+import { GlassDust } from './glass-dust';
 
 const input =
   'w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30';
@@ -70,14 +71,19 @@ export default function LoginPage() {
     <main className="flex min-h-screen">
       {/* Painel de apresentação */}
       <section className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 p-12 text-white lg:flex">
-        {/* decoração */}
+        {/* poeira + bola de vidro seguindo o cursor */}
+        <GlassDust />
         <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white/10 blur-2xl" />
         <div className="pointer-events-none absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-brand-500/40 blur-3xl" />
-        <div className="pointer-events-none absolute right-10 top-1/3 h-40 w-40 rounded-full border border-white/15" />
-        <div className="pointer-events-none absolute right-24 top-1/4 h-64 w-64 rounded-full border border-white/10" />
 
-        <div className="relative">
-          <p className="text-2xl font-bold tracking-tight">🤖 Guardião Fiscal</p>
+        <div className="relative flex items-center gap-3">
+          <img
+            src="/mascote.png"
+            alt="Mascote do Guardião Fiscal"
+            className="h-12 w-12 object-contain drop-shadow-lg"
+            onError={(e) => (e.currentTarget.style.display = 'none')}
+          />
+          <p className="text-2xl font-bold tracking-tight">Guardião Fiscal</p>
         </div>
 
         <div className="relative max-w-lg">
@@ -108,16 +114,33 @@ export default function LoginPage() {
           </ul>
         </div>
 
-        <p className="relative text-xs text-brand-50/60">
-          Nenhuma obrigação esquecida. Nenhum documento perdido. Nenhum erro fiscal silencioso.
-        </p>
+        <div className="relative flex items-end justify-between gap-4">
+          <p className="text-xs text-brand-50/60">
+            Nenhuma obrigação esquecida. Nenhum documento perdido.
+            <br />
+            Nenhum erro fiscal silencioso.
+          </p>
+          <img
+            src="/mascote.png"
+            alt=""
+            aria-hidden
+            className="pointer-events-none -mb-6 -mr-2 h-56 w-auto object-contain drop-shadow-2xl"
+            onError={(e) => (e.currentTarget.style.display = 'none')}
+          />
+        </div>
       </section>
 
       {/* Cartão de entrada */}
       <section className="flex w-full items-center justify-center bg-gray-50 p-6 lg:w-1/2">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center lg:hidden">
-            <h1 className="text-3xl font-bold text-brand-700">🤖 Guardião Fiscal</h1>
+            <img
+              src="/mascote.png"
+              alt=""
+              className="mx-auto mb-3 h-24 w-auto object-contain"
+              onError={(e) => (e.currentTarget.style.display = 'none')}
+            />
+            <h1 className="text-3xl font-bold text-brand-700">Guardião Fiscal</h1>
             <p className="mt-2 text-sm text-gray-600">
               Nenhuma obrigação esquecida. Nenhum documento perdido.
             </p>
