@@ -1,5 +1,25 @@
 # Implantação na VPS (Ubuntu 22.04/24.04)
 
+## Modo VPS COMPARTILHADA (demonstração — em uso desde 04/08/2026)
+
+Para rodar junto com outros sistemas sem tocar nas portas 80/443 deles:
+
+```bash
+cd /root/guardiao-fiscal
+docker compose -f docker-compose.shared.yml --env-file .env.shared up -d --build
+docker compose -f docker-compose.shared.yml --env-file .env.shared exec api npx ts-node prisma/seed.ts
+```
+
+- Acesso: `http://IP_DA_VPS:8100` (única porta exposta; banco/redis/minio/api só na rede interna).
+- Segredos e senha do superadmin: `/root/guardiao-fiscal/.env.shared` (não versionado, chmod 600).
+- `COOKIE_SECURE=false` porque a demo é HTTP em porta alta — **não usar assim com clientes reais**;
+  a migração para o modo produção (abaixo, com domínio+TLS) reaproveita os mesmos volumes? Não:
+  volumes são da stack `guardiao-shared`; exporte via `scripts/backup.sh` adaptado ou recomece limpo.
+- Parar tudo sem afetar os vizinhos: `docker compose -f docker-compose.shared.yml --env-file .env.shared down`
+  (acrescente `-v` apenas se quiser APAGAR os dados da demo).
+
+## Modo PRODUÇÃO (VPS dedicada com domínio)
+
 Recomendado: 4 vCPU, 8 GB RAM, 160 GB SSD. Mínimo para piloto: 2 vCPU, 4 GB.
 
 ## DNS (antes de instalar)

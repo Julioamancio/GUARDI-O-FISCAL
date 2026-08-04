@@ -28,6 +28,12 @@ Repositório: `https://github.com/Julioamancio/GUARDI-O-FISCAL`
 | Fase 5 — Hardening MVP | Imagens Docker de produção corrigidas (bug do prisma generate no worker) e validadas em execução; backup/restore testados com verificação de integridade; CI GitHub Actions (unit + e2e com Postgres/Redis/MinIO + build das 3 imagens); checklist do req. 36 | ✅ concluída 04/08 — ver [docs/05-criterios-mvp.md](docs/05-criterios-mvp.md) |
 | Pós-MVP | WhatsApp, validador XML, certificados/procurações, billing, white-label, Integra Contador, IA | ⬜ |
 
+### 🟢 Instância de demonstração NO AR
+
+`http://187.77.36.21:8100` — stack `guardiao-shared` (compose próprio, rede isolada, porta única),
+convivendo com os demais sistemas da VPS. Credenciais do superadmin em `/root/guardiao-fiscal/.env.shared`.
+Demo por HTTP (`COOKIE_SECURE=false`) — para clientes reais, migrar ao modo produção com domínio+TLS.
+
 ### Pendências para o PRIMEIRO DEPLOY REAL (fora do escopo de código)
 
 1. **VPS limpa dedicada** + domínio + DNS wildcard → `bash scripts/install-vps.sh <dominio>` (fecha o item 15 do checklist).
