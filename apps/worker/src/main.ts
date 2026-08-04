@@ -1,12 +1,16 @@
 /**
  * Worker do Guardião Fiscal.
- * Fase 1: estrutura + fila de notificações registrada (envio real entra na Fase 3,
- * junto com SMTP). Fase 2 adiciona a fila de recorrência de tarefas.
+ * Filas ativas:
+ *  - recurrence: job diário (06:00 America/Sao_Paulo) que gera tarefas
+ *    recorrentes de todos os tenants e marca vencidas;
+ *  - notifications: estrutura pronta; envio real de e-mail entra na Fase 3.
  * Jobs pesados NUNCA rodam na API — sempre aqui.
  */
-import { Worker, Job } from 'bullmq';
+import { Queue, Worker, Job } from 'bullmq';
 import IORedis from 'ioredis';
+import { PrismaClient } from '@prisma/client';
 import { QUEUES, NotificationJob } from '@guardiao/shared';
+import { runDailyRecurrence } from './recurrence';
 
 const connection = new IORedis({
   host: process.env.REDIS_HOST ?? 'localhost',
@@ -15,34 +19,64 @@ const connection = new IORedis({
   maxRetriesPerRequest: null, // exigido pelo BullMQ
 });
 
+const prisma = new PrismaClient();
 const log = (msg: string) => console.log(`[worker] ${new Date().toISOString()} ${msg}`);
+
+// --- Recorrência diária -----------------------------------------------------
+
+const recurrenceQueue = new Queue(QUEUES.RECURRENCE, { connection });
+
+const recurrenceWorker = new Worker(
+  QUEUES.RECURRENCE,
+  async () => {
+    const result = await runDailyRecurrence(prisma);
+    log(
+      `recorrência: ${result.tenants} tenants, ${result.created} tarefas criadas, ${result.overdueMarked} marcadas vencidas`,
+    );
+    return result;
+  },
+  { connection, concurrency: 1 },
+);
+
+async function scheduleRecurrence() {
+  await recurrenceQueue.upsertJobScheduler(
+    'daily-recurrence',
+    { pattern: '0 6 * * *', tz: 'America/Sao_Paulo' },
+    { name: 'daily' },
+  );
+  log('job diário de recorrência agendado (06:00 America/Sao_Paulo)');
+  if (process.env.RUN_RECURRENCE_ON_BOOT === '1') {
+    await recurrenceQueue.add('boot', {});
+    log('execução imediata de recorrência enfileirada (RUN_RECURRENCE_ON_BOOT=1)');
+  }
+}
+
+// --- Notificações (envio real na Fase 3) ------------------------------------
 
 const notificationsWorker = new Worker<NotificationJob>(
   QUEUES.NOTIFICATIONS,
   async (job: Job<NotificationJob>) => {
-    // Fase 3 liga o provedor SMTP real. Por enquanto o job é validado e registrado,
-    // sem fingir entrega: o status permanece rastreável na fila.
     log(`notificação recebida: template=${job.data.template} canal=${job.data.channel} tenant=${job.data.tenantId}`);
     if (!job.data.to || !job.data.template) {
       throw new Error('Job de notificação inválido: "to" e "template" são obrigatórios');
     }
     return { queuedAt: new Date().toISOString(), delivered: false, reason: 'SMTP não configurado (Fase 3)' };
   },
-  {
-    connection,
-    concurrency: 5,
-    limiter: { max: 50, duration: 1000 }, // proteção contra rajadas
-  },
+  { connection, concurrency: 5, limiter: { max: 50, duration: 1000 } },
 );
 
-notificationsWorker.on('completed', (job) => log(`job ${job.id} concluído`));
-notificationsWorker.on('failed', (job, err) => log(`job ${job?.id} falhou: ${err.message}`));
+for (const worker of [recurrenceWorker, notificationsWorker]) {
+  worker.on('completed', (job) => log(`[${worker.name}] job ${job.id} concluído`));
+  worker.on('failed', (job, err) => log(`[${worker.name}] job ${job?.id} falhou: ${err.message}`));
+}
 
-log(`worker iniciado — filas: ${QUEUES.NOTIFICATIONS}`);
+void scheduleRecurrence();
+log(`worker iniciado — filas: ${QUEUES.RECURRENCE}, ${QUEUES.NOTIFICATIONS}`);
 
 async function shutdown(signal: string) {
   log(`${signal} recebido, encerrando com graça...`);
-  await notificationsWorker.close();
+  await Promise.all([recurrenceWorker.close(), notificationsWorker.close(), recurrenceQueue.close()]);
+  await prisma.$disconnect();
   await connection.quit();
   process.exit(0);
 }

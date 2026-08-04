@@ -8,6 +8,9 @@ import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 import { UsersModule } from './users/users.module';
+import { CompaniesModule } from './companies/companies.module';
+import { ObligationsModule } from './obligations/obligations.module';
+import { TasksModule } from './tasks/tasks.module';
 import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
@@ -22,6 +25,9 @@ import { TenantContextInterceptor } from './common/interceptors/tenant-context.i
     AuthModule,
     AdminModule,
     UsersModule,
+    CompaniesModule,
+    ObligationsModule,
+    TasksModule,
     HealthModule,
   ],
   providers: [

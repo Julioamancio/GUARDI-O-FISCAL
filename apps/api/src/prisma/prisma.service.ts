@@ -15,7 +15,16 @@ import { TenantContext } from '../common/tenant-context';
  *
  * Ao criar um novo modelo de negócio com tenantId, adicione-o aqui.
  */
-const TENANT_MODELS = new Set<string>(['User', 'Company', 'Subscription']);
+const TENANT_MODELS = new Set<string>([
+  'User',
+  'Company',
+  'Subscription',
+  'CompanyContact',
+  'CompanyResponsible',
+  'Obligation',
+  'Task',
+  'TaskComment',
+]);
 
 type ScopedClient = ReturnType<PrismaService['createScopedClient']>;
 

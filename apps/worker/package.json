@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@guardiao/shared": "workspace:*",
+    "@prisma/client": "^6.3.0",
     "bullmq": "^5.34.0",
     "ioredis": "^5.4.2"
   },
