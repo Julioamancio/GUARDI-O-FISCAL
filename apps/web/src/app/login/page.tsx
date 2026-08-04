@@ -3,6 +3,32 @@
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 
+const input =
+  'w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30';
+
+const BENEFITS = [
+  {
+    icon: '📅',
+    title: 'Nenhuma obrigação esquecida',
+    text: 'O calendário fiscal gera as tarefas de cada empresa sozinho, todo mês — já contando feriados e dias úteis.',
+  },
+  {
+    icon: '📨',
+    title: 'Documentos sem WhatsApp perdido',
+    text: 'O sistema cobra seu cliente automaticamente até ele enviar tudo pelo portal. Você só confere e aprova.',
+  },
+  {
+    icon: '🛡️',
+    title: 'Prova de quem fez o quê',
+    text: 'Linha do tempo imutável de cada empresa: pedidos, cobranças, envios e conferências — exportável em PDF.',
+  },
+  {
+    icon: '🚦',
+    title: 'O mês inteiro em um olhar',
+    text: 'Painel de fechamento com semáforo por empresa e departamento. Vermelho? Você age antes da multa.',
+  },
+];
+
 export default function LoginPage() {
   const router = useRouter();
   const [tenantSlug, setTenantSlug] = useState('');
@@ -41,92 +67,151 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-brand-700">🤖 Guardião Fiscal</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Nenhuma obrigação esquecida. Nenhum documento perdido.
-          </p>
+    <main className="flex min-h-screen">
+      {/* Painel de apresentação */}
+      <section className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 p-12 text-white lg:flex">
+        {/* decoração */}
+        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-brand-500/40 blur-3xl" />
+        <div className="pointer-events-none absolute right-10 top-1/3 h-40 w-40 rounded-full border border-white/15" />
+        <div className="pointer-events-none absolute right-24 top-1/4 h-64 w-64 rounded-full border border-white/10" />
+
+        <div className="relative">
+          <p className="text-2xl font-bold tracking-tight">🤖 Guardião Fiscal</p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
-        >
-          {!isSuperadmin && (
-            <div>
-              <label htmlFor="tenant" className="mb-1 block text-sm font-medium">
-                Escritório
-              </label>
-              <input
-                id="tenant"
-                type="text"
-                required
-                value={tenantSlug}
-                onChange={(e) => setTenantSlug(e.target.value)}
-                placeholder="ex.: escritorio1"
-                autoComplete="organization"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-              />
-            </div>
-          )}
+        <div className="relative max-w-lg">
+          <h1 className="text-4xl font-bold leading-tight">
+            O escritório contábil que{' '}
+            <span className="underline decoration-brand-100/60 decoration-4 underline-offset-4">
+              nunca perde um prazo
+            </span>
+            .
+          </h1>
+          <p className="mt-4 text-lg text-brand-50/90">
+            Central de obrigações, documentos e prova de responsabilidade para escritórios de
+            contabilidade — funcionando sozinha enquanto você atende seus clientes.
+          </p>
 
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium">
-              E-mail
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            />
-          </div>
+          <ul className="mt-8 space-y-4">
+            {BENEFITS.map((benefit) => (
+              <li key={benefit.title} className="flex gap-3">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 text-lg backdrop-blur">
+                  {benefit.icon}
+                </span>
+                <span>
+                  <span className="block font-semibold">{benefit.title}</span>
+                  <span className="block text-sm text-brand-50/80">{benefit.text}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-          <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium">
-              Senha
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            />
-          </div>
+        <p className="relative text-xs text-brand-50/60">
+          Nenhuma obrigação esquecida. Nenhum documento perdido. Nenhum erro fiscal silencioso.
+        </p>
+      </section>
 
-          {error && (
-            <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
+      {/* Cartão de entrada */}
+      <section className="flex w-full items-center justify-center bg-gray-50 p-6 lg:w-1/2">
+        <div className="w-full max-w-md">
+          <div className="mb-8 text-center lg:hidden">
+            <h1 className="text-3xl font-bold text-brand-700">🤖 Guardião Fiscal</h1>
+            <p className="mt-2 text-sm text-gray-600">
+              Nenhuma obrigação esquecida. Nenhum documento perdido.
             </p>
-          )}
+          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
-          >
-            {loading ? 'Entrando...' : 'Entrar'}
-          </button>
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg shadow-brand-900/5">
+            <h2 className="text-xl font-bold text-gray-900">Bem-vindo de volta 👋</h2>
+            <p className="mb-6 mt-1 text-sm text-gray-500">
+              {isSuperadmin
+                ? 'Acesso do administrador da plataforma.'
+                : 'Entre com os dados do seu escritório.'}
+            </p>
 
-          <label className="flex cursor-pointer items-center gap-2 text-xs text-gray-500">
-            <input
-              type="checkbox"
-              checked={isSuperadmin}
-              onChange={(e) => setIsSuperadmin(e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            Sou administrador da plataforma
-          </label>
-        </form>
-      </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {!isSuperadmin && (
+                <div>
+                  <label htmlFor="tenant" className="mb-1 block text-sm font-medium text-gray-700">
+                    Escritório
+                  </label>
+                  <input
+                    id="tenant"
+                    type="text"
+                    required
+                    value={tenantSlug}
+                    onChange={(e) => setTenantSlug(e.target.value)}
+                    placeholder="ex.: demo"
+                    autoComplete="organization"
+                    className={input}
+                  />
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
+                  E-mail
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  className={input}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
+                  Senha
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  className={input}
+                />
+              </div>
+
+              {error && (
+                <p role="alert" className="rounded-xl bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-brand-600/25 transition hover:bg-brand-700 disabled:opacity-60"
+              >
+                {loading ? 'Entrando...' : 'Entrar no meu escritório'}
+              </button>
+
+              <label className="flex cursor-pointer items-center justify-center gap-2 pt-1 text-xs text-gray-500">
+                <input
+                  type="checkbox"
+                  checked={isSuperadmin}
+                  onChange={(e) => setIsSuperadmin(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                Sou administrador da plataforma
+              </label>
+            </form>
+          </div>
+
+          <p className="mt-6 text-center text-xs text-gray-400">
+            Ainda não tem acesso? Fale com quem administra a plataforma para criar o seu
+            escritório com 14 dias de teste.
+          </p>
+        </div>
+      </section>
     </main>
   );
 }

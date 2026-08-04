@@ -60,29 +60,83 @@ export class TasksService {
     return { items, total, page: filters.page, perPage: filters.perPage };
   }
 
-  /** Contadores para o dashboard/painel (uma ida ao banco por status). */
+  /** Contadores e séries para o dashboard (gráficos com dados reais). */
   async summary() {
-    const [byStatus, overdueCount, next7days] = await Promise.all([
-      this.prisma.scoped.task.groupBy({
-        by: ['status'],
-        where: { deletedAt: null },
-        _count: { _all: true },
-      }),
-      this.prisma.scoped.task.count({
-        where: { deletedAt: null, status: 'VENCIDA' },
-      }),
-      this.prisma.scoped.task.count({
-        where: {
-          deletedAt: null,
-          status: { in: OPEN_TASK_STATUSES as never },
-          dueDate: { gte: new Date(), lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
-        },
-      }),
-    ]);
+    // Últimas 6 competências (inclui a atual)
+    const now = new Date();
+    const competences: string[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+      competences.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`);
+    }
+
+    const [byStatus, overdueCount, next7days, byDepartment, byCompetence, upcoming] =
+      await Promise.all([
+        this.prisma.scoped.task.groupBy({
+          by: ['status'],
+          where: { deletedAt: null },
+          _count: { _all: true },
+        }),
+        this.prisma.scoped.task.count({ where: { deletedAt: null, status: 'VENCIDA' } }),
+        this.prisma.scoped.task.count({
+          where: {
+            deletedAt: null,
+            status: { in: OPEN_TASK_STATUSES as never },
+            dueDate: { gte: new Date(), lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+          },
+        }),
+        this.prisma.scoped.task.groupBy({
+          by: ['department'],
+          where: {
+            deletedAt: null,
+            status: { in: [...OPEN_TASK_STATUSES, 'VENCIDA'] as never },
+          },
+          _count: { _all: true },
+        }),
+        this.prisma.scoped.task.groupBy({
+          by: ['competence', 'status'],
+          where: { deletedAt: null, competence: { in: competences } },
+          _count: { _all: true },
+        }),
+        this.prisma.scoped.task.findMany({
+          where: {
+            deletedAt: null,
+            status: { in: [...OPEN_TASK_STATUSES, 'VENCIDA'] as never },
+          },
+          include: { company: { select: { id: true, razaoSocial: true } } },
+          orderBy: { dueDate: 'asc' },
+          take: 6,
+        }),
+      ]);
+
+    const evolution = competences.map((competence) => {
+      const rows = byCompetence.filter((r) => r.competence === competence);
+      const count = (statuses: string[]) =>
+        rows.filter((r) => statuses.includes(r.status)).reduce((acc, r) => acc + r._count._all, 0);
+      return {
+        competence,
+        concluida: count(['CONCLUIDA']),
+        vencida: count(['VENCIDA']),
+        aberta: count([...OPEN_TASK_STATUSES]),
+      };
+    });
+
     return {
       byStatus: Object.fromEntries(byStatus.map((s) => [s.status, s._count._all])),
       overdue: overdueCount,
       dueNext7Days: next7days,
+      byDepartment: Object.fromEntries(
+        byDepartment.map((d) => [d.department ?? 'OUTRO', d._count._all]),
+      ),
+      evolution,
+      upcoming: upcoming.map((t) => ({
+        id: t.id,
+        title: t.title,
+        dueDate: t.dueDate,
+        status: t.status,
+        priority: t.priority,
+        company: t.company,
+      })),
     };
   }
 

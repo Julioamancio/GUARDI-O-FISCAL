@@ -3,11 +3,27 @@ import { redirect } from 'next/navigation';
 import { apiFetch, UnauthorizedError } from '@/lib/api';
 import type { Me } from '../layout';
 import { NewTenantForm } from './new-tenant-form';
+import { ChartCard, Donut, HBars, StackedColumns, VIZ } from './charts';
 
 interface TaskSummary {
   byStatus: Record<string, number>;
   overdue: number;
   dueNext7Days: number;
+  byDepartment: Record<string, number>;
+  evolution: Array<{ competence: string; concluida: number; vencida: number; aberta: number }>;
+  upcoming: Array<{
+    id: string;
+    title: string;
+    dueDate: string;
+    status: string;
+    priority: string;
+    company: { id: string; razaoSocial: string };
+  }>;
+}
+
+interface ClosingSummary {
+  summary: Record<string, number>;
+  rows: unknown[];
 }
 
 const open = (s: TaskSummary) =>
@@ -115,10 +131,40 @@ export default async function DashboardPage() {
     );
   }
 
-  const [summary, companies] = await Promise.all([
+  const currentCompetence = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  const [summary, companies, closing, requests] = await Promise.all([
     apiFetch<TaskSummary>('/tasks/summary'),
     apiFetch<{ total: number }>('/companies?perPage=1'),
+    apiFetch<ClosingSummary>(`/closing?competence=${currentCompetence}`),
+    apiFetch<Array<{ status: string }>>('/document-requests'),
   ]);
+  const openRequests = requests.filter((r) => r.status === 'ABERTA' || r.status === 'PARCIAL').length;
+
+  const STATUS_META: Array<[string, string, string]> = [
+    ['VENCIDA', 'Vencidas', VIZ.critical],
+    ['AGUARDANDO_DOCUMENTOS', 'Aguardando documentos', VIZ.warning],
+    ['EM_ANDAMENTO', 'Em andamento', VIZ.s1],
+    ['EM_CONFERENCIA', 'Em conferência', VIZ.s1],
+    ['AGUARDANDO_APROVACAO', 'Aguardando aprovação', VIZ.s1],
+    ['NAO_INICIADA', 'Não iniciadas', VIZ.neutral],
+    ['BLOQUEADA', 'Bloqueadas', VIZ.serious],
+    ['CONCLUIDA', 'Concluídas', VIZ.good],
+  ];
+
+  const DEP_META: Array<[string, string, string]> = [
+    ['FISCAL', 'Fiscal', VIZ.s1],
+    ['CONTABIL', 'Contábil', VIZ.s2],
+    ['PESSOAL', 'Pessoal', VIZ.s3],
+    ['FINANCEIRO', 'Financeiro', VIZ.s4],
+    ['SOCIETARIO', 'Societário', VIZ.s5],
+    ['OUTRO', 'Outros', VIZ.neutral],
+  ];
+
+  const fmtDue = (iso: string) => {
+    const [y, m, d] = iso.slice(0, 10).split('-');
+    return `${d}/${m}/${y.slice(2)}`;
+  };
+  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <div>
@@ -128,7 +174,7 @@ export default async function DashboardPage() {
         <Card label="Empresas ativas" value={String(companies.total)} href="/empresas" tone="default" />
         <Card label="Tarefas em aberto" value={String(open(summary))} href="/tarefas" tone="info" />
         <Card
-          label="Vencem nos próximos 7 dias"
+          label="Vencem em 7 dias"
           value={String(summary.dueNext7Days)}
           href="/tarefas?dueSoon=1"
           tone="warn"
@@ -141,26 +187,157 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <section className="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-3 font-semibold text-gray-800">Tarefas por status</h2>
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(summary.byStatus).length === 0 && (
-            <p className="text-sm text-gray-500">
-              Nenhuma tarefa ainda — cadastre empresas e atribua obrigações do catálogo para o
-              motor de recorrência gerar o calendário automaticamente.
-            </p>
-          )}
-          {Object.entries(summary.byStatus).map(([status, count]) => (
-            <Link
-              key={status}
-              href={`/tarefas?status=${status}`}
-              className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-sm text-gray-700 hover:border-brand-500"
-            >
-              {status.replaceAll('_', ' ').toLowerCase()}: <strong>{count}</strong>
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <ChartCard
+          title="Saúde do fechamento"
+          subtitle={`competência ${currentCompetence.split('-').reverse().join('/')} — clique para abrir o painel`}
+          action={
+            <Link href="/fechamento" className="text-xs font-semibold text-brand-700 hover:underline">
+              ver painel →
             </Link>
-          ))}
-        </div>
-      </section>
+          }
+        >
+          <Donut
+            centerValue={String(companies.total)}
+            centerLabel="empresas"
+            segments={[
+              { label: 'Crítico', value: closing.summary.VERMELHO ?? 0, color: VIZ.critical, href: '/fechamento' },
+              { label: 'Atenção', value: closing.summary.AMARELO ?? 0, color: VIZ.warning, href: '/fechamento' },
+              { label: 'Em andamento', value: closing.summary.AZUL ?? 0, color: VIZ.s1, href: '/fechamento' },
+              { label: 'Concluído', value: closing.summary.VERDE ?? 0, color: VIZ.good, href: '/fechamento' },
+              { label: 'Não iniciado', value: closing.summary.CINZA ?? 0, color: VIZ.neutral, href: '/fechamento' },
+            ]}
+          />
+        </ChartCard>
+
+        <ChartCard title="Tarefas por status" subtitle="clique numa barra para filtrar a lista">
+          {Object.keys(summary.byStatus).length === 0 ? (
+            <p className="text-sm text-gray-500">
+              Nenhuma tarefa ainda — cadastre empresas, adicione obrigações do catálogo e o motor
+              de recorrência monta o calendário sozinho.
+            </p>
+          ) : (
+            <HBars
+              items={STATUS_META.filter(([key]) => (summary.byStatus[key] ?? 0) > 0).map(
+                ([key, label, color]) => ({
+                  label,
+                  value: summary.byStatus[key] ?? 0,
+                  color,
+                  href: `/tarefas?status=${key}`,
+                }),
+              )}
+            />
+          )}
+        </ChartCard>
+
+        <ChartCard title="Evolução por competência" subtitle="últimos 6 meses — clique para ver o mês">
+          <StackedColumns
+            groups={summary.evolution.map((month) => ({
+              label: month.competence.split('-').reverse().join('/'),
+              href: `/tarefas?competence=${month.competence}`,
+              parts: [
+                { label: 'Concluídas', value: month.concluida, color: VIZ.good },
+                { label: 'Em aberto', value: month.aberta, color: VIZ.s1 },
+                { label: 'Vencidas', value: month.vencida, color: VIZ.critical },
+              ],
+            }))}
+          />
+        </ChartCard>
+
+        <ChartCard title="Trabalho em aberto por departamento" subtitle="tarefas não concluídas">
+          {Object.keys(summary.byDepartment).length === 0 ? (
+            <p className="text-sm text-gray-500">Nada em aberto — tudo em dia. ✓</p>
+          ) : (
+            <HBars
+              items={DEP_META.filter(([key]) => (summary.byDepartment[key] ?? 0) > 0).map(
+                ([key, label, color]) => ({
+                  label,
+                  value: summary.byDepartment[key] ?? 0,
+                  color,
+                  href: `/tarefas?department=${key}`,
+                }),
+              )}
+            />
+          )}
+        </ChartCard>
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <ChartCard
+          title="Próximos vencimentos"
+          subtitle="o que precisa da sua atenção primeiro"
+          action={
+            <Link href="/tarefas" className="text-xs font-semibold text-brand-700 hover:underline">
+              todas →
+            </Link>
+          }
+        >
+          {summary.upcoming.length === 0 ? (
+            <p className="text-sm text-gray-500">Nenhuma tarefa em aberto. ✓</p>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {summary.upcoming.map((task) => {
+                const late = task.dueDate.slice(0, 10) < today || task.status === 'VENCIDA';
+                return (
+                  <li key={task.id}>
+                    <Link
+                      href={`/tarefas?companyId=${task.company.id}`}
+                      className="flex items-center justify-between gap-3 py-2 hover:bg-brand-50/40"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-gray-800">
+                          {task.title}
+                        </span>
+                        <span className="block truncate text-xs text-gray-500">
+                          {task.company.razaoSocial}
+                        </span>
+                      </span>
+                      <span
+                        className="shrink-0 rounded-lg px-2 py-1 text-xs font-bold tabular-nums"
+                        style={{
+                          color: late ? '#fff' : '#0b0b0b',
+                          backgroundColor: late ? VIZ.critical : '#f0efec',
+                        }}
+                      >
+                        {fmtDue(task.dueDate)}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </ChartCard>
+
+        <ChartCard title="Documentos de clientes" subtitle="solicitações em andamento">
+          <Link href="/solicitacoes" className="group flex items-center gap-4">
+            <span
+              className="text-4xl font-bold tabular-nums"
+              style={{ color: openRequests > 0 ? VIZ.warning : VIZ.good }}
+            >
+              {openRequests}
+            </span>
+            <span className="text-sm text-gray-600 group-hover:text-brand-700">
+              solicitação(ões) aguardando documentos do cliente — as cobranças automáticas estão
+              cuidando dos lembretes
+            </span>
+          </Link>
+        </ChartCard>
+
+        <ChartCard title="Ações rápidas" subtitle="atalhos do dia a dia">
+          <div className="flex flex-col gap-2 text-sm">
+            <Link href="/empresas" className="rounded-lg border border-gray-200 px-3 py-2 hover:border-brand-500 hover:text-brand-700">
+              + Cadastrar empresa
+            </Link>
+            <Link href="/solicitacoes" className="rounded-lg border border-gray-200 px-3 py-2 hover:border-brand-500 hover:text-brand-700">
+              + Solicitar documentos
+            </Link>
+            <Link href="/fechamento" className="rounded-lg border border-gray-200 px-3 py-2 hover:border-brand-500 hover:text-brand-700">
+              Conferir o fechamento do mês
+            </Link>
+          </div>
+        </ChartCard>
+      </div>
     </div>
   );
 }
