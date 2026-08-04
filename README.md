@@ -47,12 +47,13 @@ Lacunas encontradas comparando requisitos × código × telas. Em ordem de prior
 3. ✅ **Editar empresa** (modal) + contatos (add/remover) + responsáveis por área (select por área)
 4. ✅ **Troca de senha**: endpoint `POST /auth/change-password` (revoga todas as sessões) + tela `/senha` (link no topo)
 
-**Completa a experiência diária:**
-5. **Detalhe da tarefa** (checklist interativo + comentários — APIs prontas, UI só muda status)
-6. Criar **tarefa manual** pela tela; **Central de documentos** (listar/baixar por empresa/competência — API pronta); upload direto pelo contador
-7. **Sino de notificações** no topo — API `/notifications` pronta
-8. Superadmin: **suspender/reativar** escritório na tela — API pronta
-9. Visualizações **kanban/calendário** de tarefas (req. 10)
+**~~Camada 2~~ ✅ CONCLUÍDA em 04/08 (validada na VPS):**
+5. ✅ **Detalhe da tarefa** (`/tarefas/[id]`): checklist interativo (marcar/adicionar/remover), comentários, prazo/prioridade/responsável editáveis, marcação "concluída após o prazo"
+6. ✅ **Tarefa manual** pela tela + **Central de documentos** (`/documentos`: filtros, origem, versões, download seguro, upload direto)
+7. ✅ **Sino de notificações** no topo (badge de não lidas, marcar lida, atualiza a cada 60s)
+8. ✅ Superadmin **suspende/reativa** escritório na tabela (com confirmação)
+9. ✅ Visão **Kanban** (toggle Lista/Kanban) · ⬜ visão calendário (única pendência restante da camada)
++ bônus: login com **olhinho de senha** e **lembrar escritório/e-mail** (agente paralelo); rodapé com créditos + botão **📖 Manual de uso**
 
 **Produção real (infra):** SMTP · domínio+TLS · ClamAV · VPS dedicada (`install-vps.sh` ponta a ponta) · cron de backup da instância demo
 
