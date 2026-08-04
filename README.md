@@ -14,13 +14,13 @@ Repositório: `https://github.com/Julioamancio/GUARDI-O-FISCAL`
 
 ## 📌 Estado atual do projeto (leia isto primeiro)
 
-**Última atualização: 04/08/2026 — Fase 1 (Fundação) implementada e VALIDADA na VPS (build + 7 testes unitários + 6 e2e de isolamento + smoke test de API todos passando).**
+**Última atualização: 04/08/2026 — Fase 2 (backend do núcleo operacional) implementada e VALIDADA na VPS: 24 testes unitários + 17 e2e passando; worker de recorrência rodando idempotente.**
 
 | Fase | Conteúdo | Status |
 |---|---|---|
 | Planejamento | [docs/01-planejamento.md](docs/01-planejamento.md) — arquitetura, entidades, riscos, roadmap | ✅ concluído |
 | **Fase 1 — Fundação** | Monorepo, Docker, Postgres/Redis/MinIO, API NestJS (auth + multi-tenant + RBAC + auditoria), Web Next.js (login/dashboard), worker BullMQ, scripts VPS/backup | ✅ concluída e testada na VPS em 04/08/2026 |
-| Fase 2 — Núcleo operacional | Empresas (completo), departamentos, obrigações + regras de vencimento + feriados, motor de recorrência, tarefas | ⬜ próximo |
+| Fase 2 — Núcleo operacional | Empresas (completo: contatos, responsáveis por área, CNPJ validado, limite por plano), obrigações (catálogo com 10 templates BR + regras de vencimento), feriados nacionais 2025–2028 + estaduais/municipais por tenant, motor de datas fiscais (dias úteis, N-ésimo dia útil, Páscoa/Carnaval), recorrência idempotente (API + worker diário 06:00 BRT), tarefas (status, checklist, comentários, resumo) | ✅ **backend** concluído e testado na VPS 04/08 · ⬜ telas web (próximo passo) |
 | Fase 3 — Documentos e portal | Solicitações, lembretes, portal do cliente, upload MinIO, central de documentos, e-mail | ⬜ |
 | Fase 4 — Gestão e prova | Dashboard real, fechamento mensal, linha do tempo de responsabilidade, relatórios, pesquisa global, importação | ⬜ |
 | Fase 5 — Hardening MVP | e2e completos, backup/restore validados, instalação VPS ponta a ponta (requisito 36) | ⬜ |
@@ -28,9 +28,11 @@ Repositório: `https://github.com/Julioamancio/GUARDI-O-FISCAL`
 
 ### Pendências imediatas (retomar por aqui)
 
-1. Iniciar a **Fase 2** pelo módulo de **empresas** (schema já tem o núcleo de `companies`), depois obrigações + regras de vencimento + motor de recorrência no worker.
-2. Opcional recomendado: CI no GitHub Actions rodando build + testes a cada push.
-3. Validar o build das imagens Docker de produção (`docker compose -f docker-compose.prod.yml build`) antes da primeira implantação real.
+1. **Telas web da Fase 2**: páginas de empresas (lista/cadastro/detalhe), tarefas (lista com filtros, mudança de status, kanban/calendário) e obrigações — a API está pronta; usar proxy de sessão (`/api/session`) como padrão para mutações.
+2. Decisão registrada: departamentos são **enum** (`Department`) na Fase 2; tabela própria com departamentos personalizados fica para quando houver demanda de customização.
+3. Regras de vencimento dos templates estaduais/municipais (ICMS/ISS) são genéricas de propósito — **validar com contador** e ajustar por obrigação (req. 37.10).
+4. Opcional recomendado: CI no GitHub Actions rodando build + testes a cada push.
+5. Validar o build das imagens Docker de produção antes da primeira implantação real.
 
 ### Ambiente de teste na VPS (187.77.36.21 — compartilhada com outros projetos!)
 
