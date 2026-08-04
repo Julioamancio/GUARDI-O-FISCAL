@@ -25,6 +25,10 @@ export default async function DashboardPage() {
     throw error;
   }
 
+  if (me.roles.includes('client')) {
+    redirect('/portal'); // cliente do escritório vai direto ao portal
+  }
+
   if (me.tenantId === null) {
     const tenants = await apiFetch<{ total: number }>('/admin/tenants?perPage=1');
     return (

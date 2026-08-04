@@ -27,6 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         userName={me.name}
         tenantName={me.tenant?.razaoSocial ?? 'Administração da Plataforma'}
         isSuperadmin={me.tenantId === null}
+        isClient={me.roles.includes('client')}
       />
       <main className="mx-auto max-w-6xl p-6">{children}</main>
     </div>

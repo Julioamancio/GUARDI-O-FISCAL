@@ -20,13 +20,15 @@ async function handler(
   const url = `${apiBaseUrl()}/${path.map(encodeURIComponent).join('/')}${request.nextUrl.search}`;
   const hasBody = !['GET', 'HEAD'].includes(request.method);
 
+  // Repassa o Content-Type original: JSON e multipart (upload de arquivos)
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  const contentType = request.headers.get('content-type');
+  if (contentType) headers['Content-Type'] = contentType;
+
   const apiResponse = await fetch(url, {
     method: request.method,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: hasBody ? await request.text() : undefined,
+    headers,
+    body: hasBody ? Buffer.from(await request.arrayBuffer()) : undefined,
     cache: 'no-store',
   });
 

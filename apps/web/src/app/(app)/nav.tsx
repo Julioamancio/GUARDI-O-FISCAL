@@ -4,21 +4,27 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-const LINKS = [
+const STAFF_LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/empresas', label: 'Empresas' },
   { href: '/tarefas', label: 'Tarefas' },
+  { href: '/solicitacoes', label: 'Solicitações' },
 ];
+
+const CLIENT_LINKS = [{ href: '/portal', label: 'Portal' }];
 
 export function Nav({
   userName,
   tenantName,
   isSuperadmin,
+  isClient,
 }: {
   userName: string;
   tenantName: string;
   isSuperadmin: boolean;
+  isClient: boolean;
 }) {
+  const LINKS = isClient ? CLIENT_LINKS : STAFF_LINKS;
   const pathname = usePathname();
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
