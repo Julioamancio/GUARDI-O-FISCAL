@@ -1,5 +1,7 @@
 # 🛡️ Guardião Fiscal
 
+[![CI](https://github.com/Julioamancio/GUARDI-O-FISCAL/actions/workflows/ci.yml/badge.svg)](https://github.com/Julioamancio/GUARDI-O-FISCAL/actions/workflows/ci.yml)
+
 > **Nenhuma obrigação esquecida. Nenhum documento perdido. Nenhum erro fiscal silencioso.**
 
 Plataforma SaaS **multi-tenant** de controle, auditoria e prevenção fiscal para
