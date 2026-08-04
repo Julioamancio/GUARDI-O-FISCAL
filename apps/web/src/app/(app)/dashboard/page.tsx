@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { apiFetch, UnauthorizedError } from '@/lib/api';
 import type { Me } from '../layout';
+import { NewTenantForm } from './new-tenant-form';
 
 interface TaskSummary {
   byStatus: Record<string, number>;
@@ -30,7 +31,7 @@ export default async function DashboardPage() {
   }
 
   if (me.tenantId === null) {
-    const [overview, tenants] = await Promise.all([
+    const [overview, tenants, plans] = await Promise.all([
       apiFetch<{
         tenants: Record<string, number>;
         totalUsers: number;
@@ -50,6 +51,7 @@ export default async function DashboardPage() {
         }>;
         total: number;
       }>('/admin/tenants?perPage=20'),
+      apiFetch<Array<{ slug: string; name: string; maxCompanies: number }>>('/admin/plans'),
     ]);
     const fmtBytes = (b: number) =>
       b > 1024 * 1024 * 1024 ? `${(b / 1024 ** 3).toFixed(1)} GB` : `${Math.ceil(b / 1024 / 1024)} MB`;
@@ -58,6 +60,7 @@ export default async function DashboardPage() {
     return (
       <div>
         <h1 className="mb-6 text-2xl font-bold text-brand-700">Administração da Plataforma</h1>
+        <NewTenantForm plans={plans} />
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
           <Card label="Escritórios" value={String(totalTenants)} tone="default" />
           <Card label="Usuários" value={String(overview.totalUsers)} tone="info" />
