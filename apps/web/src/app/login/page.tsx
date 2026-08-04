@@ -188,6 +188,10 @@ export default function LoginPage() {
           </ul>
         </div>
 
+        <p className="relative text-xs text-brand-50/60">
+          Radar Contábil — Gestão e Prova para Escritórios de Contabilidade · Todos os direitos
+          reservados · Feito por Júlio Amâncio · © 2026
+        </p>
       </section>
 
       {/* Cartão de entrada com o mascote centralizado no vão à esquerda */}
