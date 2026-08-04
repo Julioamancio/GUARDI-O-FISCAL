@@ -15,6 +15,8 @@ export interface TaskFilters {
   department?: string;
   overdue?: boolean;
   dueBefore?: string;
+  /** Com dueFrom+dueBefore (intervalo, ex.: calendário) traz TODOS os status. */
+  dueFrom?: string;
   page: number;
   perPage: number;
 }
@@ -40,7 +42,12 @@ export class TasksService {
     }
     if (filters.dueBefore) {
       where.dueDate = { ...(where.dueDate as object), lte: new Date(`${filters.dueBefore}T23:59:59.000Z`) };
-      where.status = where.status ?? ({ in: OPEN_TASK_STATUSES as never } as never);
+      if (!filters.dueFrom) {
+        where.status = where.status ?? ({ in: OPEN_TASK_STATUSES as never } as never);
+      }
+    }
+    if (filters.dueFrom) {
+      where.dueDate = { ...(where.dueDate as object), gte: new Date(`${filters.dueFrom}T00:00:00.000Z`) };
     }
 
     const [items, total] = await Promise.all([

@@ -4,6 +4,7 @@ import { StatusSelect } from './status-select';
 import { ExportButtons } from '../export-buttons';
 import { NewTaskForm } from './new-task-form';
 import { KanbanBoard } from './kanban-board';
+import { CalendarView } from './calendar-view';
 
 interface TaskRow {
   id: string;
@@ -52,12 +53,24 @@ export default async function TarefasPage({
     dueSoon?: string;
     page?: string;
     view?: string;
+    month?: string;
   }>;
 }) {
   const params = await searchParams;
   const isKanban = params.view === 'kanban';
+  const isCalendar = params.view === 'calendario';
+  const now = new Date();
+  const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month ?? '')
+    ? params.month!
+    : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const query = new URLSearchParams();
   if (params.department) query.set('department', params.department);
+  if (isCalendar) {
+    const [y, m] = month.split('-').map(Number);
+    const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    query.set('dueFrom', `${month}-01`);
+    query.set('dueBefore', `${month}-${String(lastDay).padStart(2, '0')}`);
+  }
   if (params.status) query.set('status', params.status);
   if (params.companyId) query.set('companyId', params.companyId);
   if (params.competence) query.set('competence', params.competence);
@@ -65,8 +78,8 @@ export default async function TarefasPage({
     const limit = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     query.set('dueBefore', limit.toISOString().slice(0, 10));
   }
-  query.set('page', isKanban ? '1' : (params.page ?? '1'));
-  query.set('perPage', isKanban ? '100' : '25');
+  query.set('page', isKanban || isCalendar ? '1' : (params.page ?? '1'));
+  query.set('perPage', isKanban || isCalendar ? '100' : '25');
 
   const data = await apiFetch<{ items: TaskRow[]; total: number; page: number; perPage: number }>(
     `/tasks?${query.toString()}`,
@@ -82,11 +95,16 @@ export default async function TarefasPage({
     companies = [];
   }
 
-  const viewLink = (view: string) => {
-    const q = new URLSearchParams(params as Record<string, string>);
+  const viewLink = (view: string, monthOverride?: string) => {
+    const q = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && key !== 'page' && key !== 'view' && key !== 'month') q.set(key, value);
+    }
     if (view === 'kanban') q.set('view', 'kanban');
-    else q.delete('view');
-    q.delete('page');
+    if (view === 'calendario') {
+      q.set('view', 'calendario');
+      q.set('month', monthOverride ?? month);
+    }
     return `/tarefas?${q.toString()}`;
   };
   const totalPages = Math.max(1, Math.ceil(data.total / data.perPage));
@@ -109,6 +127,12 @@ export default async function TarefasPage({
               className={`rounded-md px-3 py-1 ${isKanban ? 'bg-brand-600 text-white' : 'text-gray-600 hover:text-brand-700'}`}
             >
               Kanban
+            </Link>
+            <Link
+              href={viewLink('calendario')}
+              className={`rounded-md px-3 py-1 ${isCalendar ? 'bg-brand-600 text-white' : 'text-gray-600 hover:text-brand-700'}`}
+            >
+              Calendário
             </Link>
           </div>
           {companies.length > 0 && <NewTaskForm companies={companies} />}
@@ -160,7 +184,13 @@ export default async function TarefasPage({
         )}
       </form>
 
-      {isKanban ? (
+      {isCalendar ? (
+        <CalendarView
+          tasks={data.items}
+          month={month}
+          buildMonthLink={(m) => viewLink('calendario', m)}
+        />
+      ) : isKanban ? (
         <KanbanBoard tasks={data.items} />
       ) : (
         <>

@@ -24,6 +24,7 @@ export class TasksController {
     @Query('department') department?: string,
     @Query('overdue') overdue?: string,
     @Query('dueBefore') dueBefore?: string,
+    @Query('dueFrom') dueFrom?: string,
     @Query('page') p?: string,
     @Query('perPage') pp?: string,
   ) {
@@ -35,6 +36,7 @@ export class TasksController {
       department,
       overdue: overdue === 'true',
       dueBefore,
+      dueFrom,
       page: page(p),
       perPage: perPage(pp),
     });
