@@ -37,6 +37,27 @@ Endereço alternativo direto: `http://187.77.36.21:8100` (bloqueado por alguns p
 Credenciais do superadmin em `/root/guardiao-fiscal/.env.shared`.
 Demo por HTTP (`COOKIE_SECURE=false`) — para clientes reais, migrar ao modo produção com domínio+TLS.
 
+### 🎯 FASE 6 — COMPLETUDE DO PRODUTO (auditoria de 04/08/2026; retomar por aqui)
+
+Lacunas encontradas comparando requisitos × código × telas. Em ordem de prioridade:
+
+**Bloqueia o escritório de operar sozinho (APIs prontas, faltam as TELAS):**
+1. Tela **Equipe/Usuários** (criar contador/auditor/cliente, ativar/desativar, papel) — API `/users` completa
+2. **Vincular cliente ao portal** no detalhe da empresa — API `POST /companies/:id/clients/:userId` pronta
+3. **Editar empresa** + gerenciar contatos e responsáveis por área na tela — APIs prontas (detalhe hoje é só leitura)
+4. **Troca de senha** — ⚠️ nem o ENDPOINT existe (ChangePasswordDto está órfão no código); recuperação de senha depende de SMTP
+
+**Completa a experiência diária:**
+5. **Detalhe da tarefa** (checklist interativo + comentários — APIs prontas, UI só muda status)
+6. Criar **tarefa manual** pela tela; **Central de documentos** (listar/baixar por empresa/competência — API pronta); upload direto pelo contador
+7. **Sino de notificações** no topo — API `/notifications` pronta
+8. Superadmin: **suspender/reativar** escritório na tela — API pronta
+9. Visualizações **kanban/calendário** de tarefas (req. 10)
+
+**Produção real (infra):** SMTP · domínio+TLS · ClamAV · VPS dedicada (`install-vps.sh` ponta a ponta) · cron de backup da instância demo
+
+**Requisitos do escopo original ainda não construídos (pós-MVP contratado, req. 35):** 2FA · WhatsApp Cloud API · validador de XML · certificados/procurações · billing/assinaturas · white-label completo · Integra Contador · LGPD (telas de consentimento/exportação) · relatórios agendados por e-mail · IA
+
 ### Pendências para o PRIMEIRO DEPLOY REAL (fora do escopo de código)
 
 1. **VPS limpa dedicada** + domínio + DNS wildcard → `bash scripts/install-vps.sh <dominio>` (fecha o item 15 do checklist).
