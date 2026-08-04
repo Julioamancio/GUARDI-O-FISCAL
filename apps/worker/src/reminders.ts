@@ -123,6 +123,19 @@ export async function runDailyReminders(
         after: { stage, pendingItems: pendingItems.length, recipients: Math.max(activeClients.length, 1) },
       },
     });
+    await prisma.responsibilityTimeline.create({
+      data: {
+        tenantId: request.tenantId,
+        companyId: request.companyId,
+        competence: request.competence,
+        event: 'documento.lembrete',
+        description: `Cobrança automática (${isLate ? 'em atraso' : `estágio ${stage}`}) de ${pendingItems.length} documento(s) pendente(s) da solicitação "${request.title}"`,
+        entity: 'DocumentRequest',
+        entityId: request.id,
+        actorName: 'Sistema',
+        meta: { stage },
+      },
+    });
     remindersSent++;
   }
 

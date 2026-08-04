@@ -44,4 +44,10 @@ export class AdminController {
   listPlans() {
     return this.adminService.listPlans();
   }
+
+  @Get('overview')
+  @ApiOperation({ summary: 'Métricas globais: tenants, usuários, empresas, tarefas, armazenamento' })
+  overview() {
+    return this.adminService.overview();
+  }
 }

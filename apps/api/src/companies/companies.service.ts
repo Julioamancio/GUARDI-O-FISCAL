@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { isValidCnpj, normalizeCnpj } from '@guardiao/shared';
+import { parseCsv } from '../common/csv';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { TenantContext } from '../common/tenant-context';
@@ -214,6 +215,106 @@ export class CompaniesService {
     await this.prisma.scoped.companyResponsible.delete({ where: { id: existing.id } });
     await this.audit.log({ action: 'companies.responsibles.remove', entity: 'CompanyResponsible', entityId: existing.id });
     return { deleted: true };
+  }
+
+  // --- Importação CSV (requisito 32) ---
+
+  static readonly IMPORT_HEADER = ['razao_social', 'cnpj', 'nome_fantasia', 'regime_tributario', 'uf', 'municipio', 'email', 'telefone'];
+  static readonly IMPORT_TEMPLATE =
+    '﻿' +
+    CompaniesService.IMPORT_HEADER.join(';') +
+    '\r\nContabilidade Exemplo LTDA;12.345.678/0001-90;Exemplo;SIMPLES_NACIONAL;SP;São Paulo;contato@exemplo.com.br;(11) 99999-0000\r\n';
+
+  /**
+   * Importa empresas de um CSV. confirm=false = pré-visualização (valida tudo,
+   * não grava nada); confirm=true = grava apenas as linhas válidas.
+   */
+  async importCsv(fileBuffer: Buffer, confirm: boolean) {
+    const rows = parseCsv(fileBuffer.toString('utf8'));
+    if (rows.length < 2) throw new BadRequestException('CSV vazio — baixe o modelo em /companies/import/template');
+
+    const header = rows[0].map((h) => h.trim().toLowerCase().replace(/\s+/g, '_'));
+    const col = (name: string) => header.indexOf(name);
+    if (col('razao_social') === -1 || col('cnpj') === -1) {
+      throw new BadRequestException('Cabeçalho inválido: as colunas razao_social e cnpj são obrigatórias');
+    }
+
+    const REGIMES = ['SIMPLES_NACIONAL', 'LUCRO_PRESUMIDO', 'LUCRO_REAL', 'MEI', 'IMUNE_ISENTA', 'OUTRO'];
+    const existing = await this.prisma.scoped.company.findMany({ select: { cnpj: true } });
+    const existingCnpjs = new Set(existing.map((c) => c.cnpj));
+    const seenInFile = new Set<string>();
+    const errors: Array<{ line: number; error: string }> = [];
+    const valid: Array<{
+      razaoSocial: string; cnpj: string; nomeFantasia?: string; regimeTributario?: string;
+      uf?: string; municipio?: string; email?: string; phone?: string;
+    }> = [];
+
+    rows.slice(1).forEach((row, index) => {
+      const line = index + 2; // linha real no arquivo
+      const get = (name: string) => (col(name) >= 0 ? (row[col(name)] ?? '').trim() : '');
+      const razaoSocial = get('razao_social');
+      const rawCnpj = get('cnpj');
+      const regime = get('regime_tributario').toUpperCase().replace(/\s+/g, '_');
+      const uf = get('uf').toUpperCase();
+
+      if (!razaoSocial) return errors.push({ line, error: 'razao_social vazia' });
+      if (!isValidCnpj(rawCnpj)) return errors.push({ line, error: `CNPJ inválido: "${rawCnpj}"` });
+      const cnpj = normalizeCnpj(rawCnpj);
+      if (seenInFile.has(cnpj)) return errors.push({ line, error: `CNPJ duplicado no arquivo: ${cnpj}` });
+      if (existingCnpjs.has(cnpj)) return errors.push({ line, error: `CNPJ já cadastrado no escritório: ${cnpj}` });
+      if (regime && !REGIMES.includes(regime)) {
+        return errors.push({ line, error: `regime_tributario inválido: "${get('regime_tributario')}" (use ${REGIMES.join(', ')})` });
+      }
+      if (uf && uf.length !== 2) return errors.push({ line, error: `UF inválida: "${uf}"` });
+
+      seenInFile.add(cnpj);
+      valid.push({
+        razaoSocial,
+        cnpj,
+        nomeFantasia: get('nome_fantasia') || undefined,
+        regimeTributario: regime || undefined,
+        uf: uf || undefined,
+        municipio: get('municipio') || undefined,
+        email: get('email') || undefined,
+        phone: get('telefone') || undefined,
+      });
+    });
+
+    let created = 0;
+    if (confirm && valid.length > 0) {
+      // Limite do plano considerado sobre o total final
+      const tenant = await this.prisma.tenant.findUniqueOrThrow({
+        where: { id: this.tid() },
+        include: { plan: true },
+      });
+      const current = await this.prisma.scoped.company.count({ where: { deletedAt: null } });
+      if (tenant.plan && current + valid.length > tenant.plan.maxCompanies) {
+        throw new BadRequestException(
+          `A importação excederia o limite do plano (${tenant.plan.maxCompanies} empresas; atuais: ${current}, no arquivo: ${valid.length})`,
+        );
+      }
+      const tenantId = this.tid();
+      const result = await this.prisma.company.createMany({
+        data: valid.map((v) => ({ ...v, tenantId, regimeTributario: v.regimeTributario as never })),
+        skipDuplicates: true,
+      });
+      created = result.count;
+      await this.audit.log({
+        action: 'companies.import',
+        entity: 'Company',
+        after: { totalRows: rows.length - 1, created, errors: errors.length },
+      });
+    }
+
+    return {
+      totalRows: rows.length - 1,
+      validRows: valid.length,
+      errorRows: errors.length,
+      created,
+      confirmed: confirm,
+      errors: errors.slice(0, 100),
+      preview: confirm ? [] : valid.slice(0, 10),
+    };
   }
 
   // --- Acesso de clientes ao portal ---

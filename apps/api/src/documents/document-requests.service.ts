@@ -3,6 +3,7 @@ import { DocumentRequestStatus, RequestItemStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { TimelineService } from '../timeline/timeline.service';
 import { TenantContext } from '../common/tenant-context';
 import { CreateDocumentRequestDto, ReviewItemDto, UpdateDocumentRequestDto } from './dto/documents.dto';
 
@@ -12,6 +13,7 @@ export class DocumentRequestsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
+    private readonly timeline: TimelineService,
   ) {}
 
   async create(dto: CreateDocumentRequestDto) {
@@ -76,6 +78,15 @@ export class DocumentRequestsService {
       entity: 'DocumentRequest',
       entityId: request.id,
       after: { title: dto.title, companyId: dto.companyId, items: dto.items.length, notifiedClients: clients.length },
+    });
+    await this.timeline.record({
+      companyId: dto.companyId,
+      competence: dto.competence,
+      event: 'documento.solicitado',
+      description: `Solicitou "${dto.title}" com ${dto.items.length} item(ns); ${clients.length > 0 ? `${clients.length} cliente(s) notificado(s)` : 'notificação enviada ao e-mail da empresa'}${dto.dueDate ? `; prazo ${dto.dueDate.split('-').reverse().join('/')}` : ''}`,
+      entity: 'DocumentRequest',
+      entityId: request.id,
+      meta: { items: dto.items },
     });
     return request;
   }
@@ -194,6 +205,17 @@ export class DocumentRequestsService {
       entityId: itemId,
       before: { status: item.status },
       after: dto,
+    });
+    await this.timeline.record({
+      companyId: item.request.companyId,
+      competence: item.request.competence,
+      event: dto.status === 'APROVADO' ? 'documento.aprovado' : 'documento.rejeitado',
+      description:
+        dto.status === 'APROVADO'
+          ? `Conferiu e aprovou "${item.name}" (${item.request.title})`
+          : `Rejeitou "${item.name}" (${item.request.title}) — motivo: ${dto.rejectionReason}`,
+      entity: 'DocumentRequestItem',
+      entityId: itemId,
     });
     return updated;
   }

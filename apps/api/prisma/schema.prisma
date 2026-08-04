@@ -649,6 +649,32 @@ model DocumentReminder {
   @@map("document_reminders")
 }
 
+// ---------------------------------------------------------------------------
+// Fase 4 — Linha do Tempo de Responsabilidade (requisito 16)
+// APPEND-ONLY: a aplicação apenas INSERE. Nenhuma rota de update/delete existe;
+// é a prova de quem fez o quê, quando, para qual empresa e competência.
+// ---------------------------------------------------------------------------
+
+model ResponsibilityTimeline {
+  id          String   @id @default(uuid())
+  tenantId    String
+  companyId   String?
+  competence  String? // YYYY-MM quando aplicável
+  event       String // ex.: documento.solicitado, documento.recebido, tarefa.status
+  description String
+  entity      String
+  entityId    String?
+  actorId     String?
+  actorName   String? // denormalizado: o nome vale mesmo se o usuário for excluído
+  ip          String?
+  meta        Json?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, companyId, competence])
+  @@index([tenantId, createdAt])
+  @@map("responsibility_timeline")
+}
+
 model Notification {
   id          String           @id @default(uuid())
   tenantId    String?

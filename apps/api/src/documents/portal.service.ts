@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { TimelineService } from '../timeline/timeline.service';
 import { TenantContext } from '../common/tenant-context';
 import { DocumentsService, UploadedFileLike } from './documents.service';
 import { DocumentRequestsService } from './document-requests.service';
@@ -19,6 +20,7 @@ export class PortalService {
     private readonly requests: DocumentRequestsService,
     private readonly notifications: NotificationsService,
     private readonly audit: AuditService,
+    private readonly timeline: TimelineService,
   ) {}
 
   private async linkedCompanyIds(): Promise<string[]> {
@@ -104,6 +106,15 @@ export class PortalService {
       entity: 'DocumentRequestItem',
       entityId: itemId,
       after: { file: file.originalname, size: file.size, version: stored.version.version },
+    });
+    await this.timeline.record({
+      companyId: item.request.companyId,
+      competence: item.request.competence,
+      event: 'documento.recebido',
+      description: `Cliente enviou "${file.originalname}" para o item "${item.name}" (versão ${stored.version.version}, ${Math.ceil(file.size / 1024)} KB)`,
+      entity: 'Document',
+      entityId: stored.document.id,
+      meta: { checksum: stored.version.checksum },
     });
     return { itemId, status: 'RECEBIDO', documentId: stored.document.id, version: stored.version.version };
   }

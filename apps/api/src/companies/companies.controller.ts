@@ -1,5 +1,20 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Header,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CompaniesService } from './companies.service';
 import { CreateCompanyDto, CreateContactDto, SetResponsibleDto, UpdateCompanyDto } from './dto/companies.dto';
 import { RequirePermissions } from '../common/decorators/require-permissions.decorator';
@@ -26,6 +41,30 @@ export class CompaniesController {
     @Query('perPage') pp?: string,
   ) {
     return this.companiesService.list({ search, status, regime, uf, tag, page: page(p), perPage: perPage(pp) });
+  }
+
+  // Rotas de importação DEVEM vir antes de ':id' (ordem de match do roteador)
+
+  @Get('import/template')
+  @RequirePermissions('companies.write')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="modelo-empresas.csv"')
+  @ApiOperation({ summary: 'Modelo de planilha CSV para importação' })
+  importTemplate(): string {
+    return CompaniesService.IMPORT_TEMPLATE;
+  }
+
+  @Post('import')
+  @RequirePermissions('companies.write')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024 } }))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Importa empresas de CSV (confirm=false = pré-visualização)' })
+  importCsv(
+    @UploadedFile() file: { buffer?: Buffer } | undefined,
+    @Query('confirm') confirm?: string,
+  ) {
+    if (!file?.buffer) throw new BadRequestException('Envie o arquivo CSV no campo "file"');
+    return this.companiesService.importCsv(file.buffer, confirm === 'true');
   }
 
   @Get(':id')

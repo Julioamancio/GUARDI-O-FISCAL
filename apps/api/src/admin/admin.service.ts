@@ -118,4 +118,39 @@ export class AdminService {
   listPlans() {
     return this.prisma.plan.findMany({ where: { isActive: true }, orderBy: { priceCents: 'asc' } });
   }
+
+  /** Métricas globais da plataforma (painel do superadmin — req. 4/19). */
+  async overview() {
+    const [tenantsByStatus, totalUsers, totalCompanies, totalTasks, storage] = await Promise.all([
+      this.prisma.tenant.groupBy({ by: ['status'], where: { deletedAt: null }, _count: { _all: true } }),
+      this.prisma.user.count({ where: { deletedAt: null, tenantId: { not: null } } }),
+      this.prisma.company.count({ where: { deletedAt: null } }),
+      this.prisma.task.count({ where: { deletedAt: null } }),
+      this.prisma.documentVersion.groupBy({
+        by: ['tenantId'],
+        _sum: { size: true },
+        orderBy: { _sum: { size: 'desc' } },
+        take: 10,
+      }),
+    ]);
+
+    const tenantNames = await this.prisma.tenant.findMany({
+      where: { id: { in: storage.map((s) => s.tenantId) } },
+      select: { id: true, slug: true, razaoSocial: true },
+    });
+    const nameById = new Map(tenantNames.map((t) => [t.id, t]));
+
+    return {
+      tenants: Object.fromEntries(tenantsByStatus.map((t) => [t.status, t._count._all])),
+      totalUsers,
+      totalCompanies,
+      totalTasks,
+      storageTop: storage.map((s) => ({
+        tenant: nameById.get(s.tenantId)?.razaoSocial ?? s.tenantId,
+        slug: nameById.get(s.tenantId)?.slug,
+        bytes: s._sum.size ?? 0,
+      })),
+      storageTotalBytes: storage.reduce((acc, s) => acc + (s._sum.size ?? 0), 0),
+    };
+  }
 }

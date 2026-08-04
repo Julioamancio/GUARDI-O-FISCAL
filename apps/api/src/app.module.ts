@@ -14,6 +14,10 @@ import { TasksModule } from './tasks/tasks.module';
 import { StorageModule } from './storage/storage.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { DocumentsModule } from './documents/documents.module';
+import { TimelineModule } from './timeline/timeline.module';
+import { ClosingModule } from './closing/closing.module';
+import { SearchModule } from './search/search.module';
+import { ReportsModule } from './reports/reports.module';
 import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
@@ -34,6 +38,10 @@ import { TenantContextInterceptor } from './common/interceptors/tenant-context.i
     StorageModule,
     NotificationsModule,
     DocumentsModule,
+    TimelineModule,
+    ClosingModule,
+    SearchModule,
+    ReportsModule,
     HealthModule,
   ],
   providers: [

@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { Prisma, TaskStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { TimelineService } from '../timeline/timeline.service';
 import { TenantContext } from '../common/tenant-context';
 import { OPEN_TASK_STATUSES } from '../obligations/recurrence.service';
 import { CreateCommentDto, CreateTaskDto, UpdateTaskDto } from './dto/tasks.dto';
@@ -23,6 +24,7 @@ export class TasksService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly timeline: TimelineService,
   ) {}
 
   async list(filters: TaskFilters) {
@@ -170,6 +172,16 @@ export class TasksService {
       before: { status: current.status, dueDate: current.dueDate, responsibleId: current.responsibleId },
       after: dto,
     });
+    if (dto.status && dto.status !== current.status) {
+      await this.timeline.record({
+        companyId: current.companyId,
+        competence: current.competence,
+        event: 'tarefa.status',
+        description: `Tarefa "${current.title}": ${current.status.replaceAll('_', ' ').toLowerCase()} → ${dto.status.replaceAll('_', ' ').toLowerCase()}${dto.status === 'CONCLUIDA' && updated.completedAt && updated.dueDate && updated.completedAt > updated.dueDate ? ' (concluída APÓS o vencimento)' : ''}`,
+        entity: 'Task',
+        entityId: id,
+      });
+    }
     return updated;
   }
 
