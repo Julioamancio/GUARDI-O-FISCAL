@@ -14,13 +14,13 @@ Repositório: `https://github.com/Julioamancio/GUARDI-O-FISCAL`
 
 ## 📌 Estado atual do projeto (leia isto primeiro)
 
-**Última atualização: 04/08/2026 — Fase 2 (backend do núcleo operacional) implementada e VALIDADA na VPS: 24 testes unitários + 17 e2e passando; worker de recorrência rodando idempotente.**
+**Última atualização: 04/08/2026 — Fase 2 COMPLETA (backend + telas web) e validada na VPS: 24 testes unitários + 17 e2e + smoke web 11/11 passando.**
 
 | Fase | Conteúdo | Status |
 |---|---|---|
 | Planejamento | [docs/01-planejamento.md](docs/01-planejamento.md) — arquitetura, entidades, riscos, roadmap | ✅ concluído |
 | **Fase 1 — Fundação** | Monorepo, Docker, Postgres/Redis/MinIO, API NestJS (auth + multi-tenant + RBAC + auditoria), Web Next.js (login/dashboard), worker BullMQ, scripts VPS/backup | ✅ concluída e testada na VPS em 04/08/2026 |
-| Fase 2 — Núcleo operacional | Empresas (completo: contatos, responsáveis por área, CNPJ validado, limite por plano), obrigações (catálogo com 10 templates BR + regras de vencimento), feriados nacionais 2025–2028 + estaduais/municipais por tenant, motor de datas fiscais (dias úteis, N-ésimo dia útil, Páscoa/Carnaval), recorrência idempotente (API + worker diário 06:00 BRT), tarefas (status, checklist, comentários, resumo) | ✅ **backend** concluído e testado na VPS 04/08 · ⬜ telas web (próximo passo) |
+| Fase 2 — Núcleo operacional | Empresas (contatos, responsáveis por área, CNPJ validado, limite por plano), obrigações (catálogo com 10 templates BR + regras de vencimento), feriados 2025–2028 + estaduais/municipais, motor de datas fiscais, recorrência idempotente (API + worker 06:00 BRT), tarefas (status, checklist, comentários, resumo) **+ telas web**: dashboard com contadores reais, empresas (lista/cadastro/detalhe com catálogo de obrigações e gerador de tarefas), tarefas (filtros + status inline), sessão com renovação transparente no middleware e proxy autenticado | ✅ concluída e testada na VPS 04/08 |
 | Fase 3 — Documentos e portal | Solicitações, lembretes, portal do cliente, upload MinIO, central de documentos, e-mail | ⬜ |
 | Fase 4 — Gestão e prova | Dashboard real, fechamento mensal, linha do tempo de responsabilidade, relatórios, pesquisa global, importação | ⬜ |
 | Fase 5 — Hardening MVP | e2e completos, backup/restore validados, instalação VPS ponta a ponta (requisito 36) | ⬜ |
@@ -28,11 +28,11 @@ Repositório: `https://github.com/Julioamancio/GUARDI-O-FISCAL`
 
 ### Pendências imediatas (retomar por aqui)
 
-1. **Telas web da Fase 2**: páginas de empresas (lista/cadastro/detalhe), tarefas (lista com filtros, mudança de status, kanban/calendário) e obrigações — a API está pronta; usar proxy de sessão (`/api/session`) como padrão para mutações.
-2. Decisão registrada: departamentos são **enum** (`Department`) na Fase 2; tabela própria com departamentos personalizados fica para quando houver demanda de customização.
-3. Regras de vencimento dos templates estaduais/municipais (ICMS/ISS) são genéricas de propósito — **validar com contador** e ajustar por obrigação (req. 37.10).
-4. Opcional recomendado: CI no GitHub Actions rodando build + testes a cada push.
-5. Validar o build das imagens Docker de produção antes da primeira implantação real.
+1. **Fase 3 — Documentos e portal do cliente**: solicitações de documentos, lembretes automáticos, upload seguro para MinIO, central de documentos, notificações por e-mail (SMTP no worker). Começar pelo schema (document_requests, documents, document_versions) com migration via `prisma migrate diff` na VPS.
+2. Complementos de UI da Fase 2 que podem entrar junto: visualização kanban/calendário de tarefas, página de detalhe da tarefa (checklist + comentários já existem na API), formulários de contatos/responsáveis no detalhe da empresa (API pronta).
+3. Decisão registrada: departamentos são **enum** (`Department`); tabela própria fica para quando houver demanda de customização.
+4. Regras de ICMS/ISS dos templates são genéricas de propósito — **validar com contador** e ajustar por obrigação (req. 37.10).
+5. Opcional recomendado: CI no GitHub Actions; validar build das imagens Docker de produção antes da primeira implantação real.
 
 ### Ambiente de teste na VPS (187.77.36.21 — compartilhada com outros projetos!)
 
