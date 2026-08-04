@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -217,7 +217,8 @@ export class AuthService {
     const payload: AccessTokenPayload = { sub: userId, tid: tenantId, roles, perms: permissions };
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: process.env.JWT_ACCESS_SECRET,
-      expiresIn: process.env.JWT_ACCESS_TTL ?? '15m',
+      // TTL vem do .env em formato "15m"/"1h"; o tipo do jsonwebtoken v9 exige o cast
+      expiresIn: (process.env.JWT_ACCESS_TTL ?? '15m') as JwtSignOptions['expiresIn'],
     });
 
     const refreshToken = randomBytes(48).toString('base64url');
