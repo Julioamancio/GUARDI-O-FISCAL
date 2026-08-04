@@ -225,8 +225,7 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-6 text-center text-xs text-gray-400">
-            Ainda não tem acesso? Fale com quem administra a plataforma para criar o seu
-            escritório com 14 dias de teste.
+            ✨ Novos escritórios começam com 14 dias de teste grátis.
           </p>
         </div>
       </section>
