@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* White-label: estes valores serão sobrescritos pela identidade do tenant */
+  --brand-primary: #1a7f56;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@guardiao/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Guardião Fiscal — tipos, enums e constantes compartilhadas",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo \"lint configurado na fase de CI\"",
+    "test": "echo \"sem testes neste pacote\""
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
