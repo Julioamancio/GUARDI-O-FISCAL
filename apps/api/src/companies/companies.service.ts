@@ -1,4 +1,10 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { isValidCnpj, normalizeCnpj } from '@guardiao/shared';
 import { PrismaService } from '../prisma/prisma.service';
@@ -91,6 +97,7 @@ export class CompaniesService {
     const company = await this.prisma.scoped.company.create({
       data: {
         ...dto,
+        tenantId: this.tid(),
         cnpj,
         uf: dto.uf?.toUpperCase(),
         dataAbertura: dto.dataAbertura ? new Date(dto.dataAbertura) : undefined,
@@ -155,7 +162,9 @@ export class CompaniesService {
 
   async addContact(companyId: string, dto: CreateContactDto) {
     await this.ensureCompany(companyId);
-    const contact = await this.prisma.scoped.companyContact.create({ data: { ...dto, companyId } });
+    const contact = await this.prisma.scoped.companyContact.create({
+      data: { ...dto, companyId, tenantId: this.tid() },
+    });
     await this.audit.log({ action: 'companies.contacts.add', entity: 'CompanyContact', entityId: contact.id, after: dto });
     return contact;
   }
@@ -184,7 +193,7 @@ export class CompaniesService {
           data: { userId: dto.userId },
         })
       : await this.prisma.scoped.companyResponsible.create({
-          data: { companyId, area: dto.area, userId: dto.userId },
+          data: { companyId, area: dto.area, userId: dto.userId, tenantId: this.tid() },
         });
     await this.audit.log({
       action: 'companies.responsibles.set',
@@ -210,5 +219,12 @@ export class CompaniesService {
     const company = await this.prisma.scoped.company.findFirst({ where: { id, deletedAt: null } });
     if (!company) throw new NotFoundException('Empresa não encontrada');
     return company;
+  }
+
+  /** tenantId do contexto (a extensão scoped revalida em toda query). */
+  private tid(): string {
+    const tenantId = TenantContext.get()?.tenantId;
+    if (!tenantId) throw new ForbiddenException('Operação exige contexto de escritório');
+    return tenantId;
   }
 }

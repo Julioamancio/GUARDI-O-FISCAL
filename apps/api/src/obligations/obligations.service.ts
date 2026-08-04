@@ -88,6 +88,7 @@ export class ObligationsService {
       created.push(
         await this.prisma.scoped.obligation.create({
           data: {
+            tenantId: TenantContext.get()?.tenantId as string,
             companyId: company.id,
             templateId: template?.id,
             name,

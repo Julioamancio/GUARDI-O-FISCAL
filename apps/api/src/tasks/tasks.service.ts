@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, TaskStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -110,6 +110,7 @@ export class TasksService {
 
     const task = await this.prisma.scoped.task.create({
       data: {
+        tenantId: this.tid(),
         companyId: dto.companyId,
         title: dto.title,
         description: dto.description,
@@ -185,7 +186,7 @@ export class TasksService {
     if (!task) throw new NotFoundException('Tarefa não encontrada');
     const userId = TenantContext.get()?.userId ?? null;
     const comment = await this.prisma.scoped.taskComment.create({
-      data: { taskId, userId, body: dto.body },
+      data: { taskId, userId, body: dto.body, tenantId: this.tid() },
       include: { user: { select: { id: true, name: true } } },
     });
     await this.audit.log({ action: 'tasks.comment', entity: 'TaskComment', entityId: comment.id });
@@ -195,5 +196,12 @@ export class TasksService {
   private async ensureUser(userId: string) {
     const user = await this.prisma.scoped.user.findFirst({ where: { id: userId, deletedAt: null } });
     if (!user) throw new NotFoundException('Responsável não encontrado no escritório');
+  }
+
+  /** tenantId do contexto (a extensão scoped revalida em toda query). */
+  private tid(): string {
+    const tenantId = TenantContext.get()?.tenantId;
+    if (!tenantId) throw new ForbiddenException('Operação exige contexto de escritório');
+    return tenantId;
   }
 }
