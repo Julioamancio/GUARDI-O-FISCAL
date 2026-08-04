@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const secure = process.env.NODE_ENV === 'production';
+const secure = process.env.COOKIE_SECURE
+  ? process.env.COOKIE_SECURE === 'true'
+  : process.env.NODE_ENV === 'production';
 const baseCookie = { httpOnly: true, secure, sameSite: 'lax' as const, path: '/' };
 
 /**

@@ -4,7 +4,11 @@ import { apiBaseUrl } from '@/lib/api';
 const ACCESS_COOKIE = 'gf_access';
 const REFRESH_COOKIE = 'gf_refresh';
 
-const secure = process.env.NODE_ENV === 'production';
+// COOKIE_SECURE=false permite demo por HTTP em porta alta (sem TLS).
+// Em produção real (HTTPS), deixe indefinido: o padrão exige Secure.
+const secure = process.env.COOKIE_SECURE
+  ? process.env.COOKIE_SECURE === 'true'
+  : process.env.NODE_ENV === 'production';
 const baseCookie = { httpOnly: true, secure, sameSite: 'lax' as const, path: '/' };
 
 /**
