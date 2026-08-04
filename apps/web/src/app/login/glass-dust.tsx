@@ -230,5 +230,16 @@ export function GlassDust() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} aria-hidden className="absolute inset-0 h-full w-full" />;
+  // A máscara apaga a poeira sobre a área do texto (esquerda) — as estrelinhas
+  // só aparecem na metade direita, onde não atrapalham a leitura.
+  const mask =
+    'linear-gradient(to right, transparent 0%, transparent 52%, black 80%, black 100%)';
+  return (
+    <canvas
+      ref={canvasRef}
+      aria-hidden
+      className="absolute inset-0 h-full w-full"
+      style={{ WebkitMaskImage: mask, maskImage: mask }}
+    />
+  );
 }

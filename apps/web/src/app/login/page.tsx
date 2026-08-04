@@ -7,26 +7,70 @@ import { GlassDust } from './glass-dust';
 const input =
   'w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30';
 
+/* Ícones Lucide (lucide.dev, licença ISC) — traço fino, padrão de mercado */
+function Icon({ children }: { children: React.ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+      aria-hidden
+    >
+      {children}
+    </svg>
+  );
+}
+
 const BENEFITS = [
   {
-    icon: '📅',
-    title: 'Nenhuma obrigação esquecida',
-    text: 'O calendário fiscal gera as tarefas de cada empresa sozinho, todo mês — já contando feriados e dias úteis.',
+    icon: (
+      <Icon>
+        <path d="M8 2v4" />
+        <path d="M16 2v4" />
+        <rect width="18" height="18" x="3" y="4" rx="2" />
+        <path d="M3 10h18" />
+        <path d="m9 16 2 2 4-4" />
+      </Icon>
+    ),
+    title: 'Prazos no automático',
+    text: 'As tarefas de DAS, FGTS, folha e companhia nascem sozinhas todo mês, na data certa — feriados e dias úteis já calculados.',
   },
   {
-    icon: '📨',
-    title: 'Documentos sem WhatsApp perdido',
-    text: 'O sistema cobra seu cliente automaticamente até ele enviar tudo pelo portal. Você só confere e aprova.',
+    icon: (
+      <Icon>
+        <path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8" />
+        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+        <path d="m16 19 2 2 4-4" />
+      </Icon>
+    ),
+    title: 'Documentos chegam sem correr atrás',
+    text: 'O sistema lembra seu cliente quantas vezes for preciso e recebe tudo num portal organizado. Você só confere e aprova.',
   },
   {
-    icon: '🛡️',
-    title: 'Prova de quem fez o quê',
-    text: 'Linha do tempo imutável de cada empresa: pedidos, cobranças, envios e conferências — exportável em PDF.',
+    icon: (
+      <Icon>
+        <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+        <path d="m9 12 2 2 4-4" />
+      </Icon>
+    ),
+    title: 'Prova na mão',
+    text: 'Cada pedido, cobrança, envio e aprovação fica numa linha do tempo que ninguém apaga — e sai em PDF quando você precisar.',
   },
   {
-    icon: '🚦',
-    title: 'O mês inteiro em um olhar',
-    text: 'Painel de fechamento com semáforo por empresa e departamento. Vermelho? Você age antes da multa.',
+    icon: (
+      <Icon>
+        <rect width="7" height="9" x="3" y="3" rx="1" />
+        <rect width="7" height="5" x="14" y="3" rx="1" />
+        <rect width="7" height="9" x="14" y="12" rx="1" />
+        <rect width="7" height="5" x="3" y="16" rx="1" />
+      </Icon>
+    ),
+    title: 'O escritório inteiro numa tela',
+    text: 'Semáforo por empresa e departamento: você bate o olho, encontra o problema e age antes de virar multa.',
   },
 ];
 
@@ -102,7 +146,7 @@ export default function LoginPage() {
           <ul className="mt-8 space-y-4">
             {BENEFITS.map((benefit) => (
               <li key={benefit.title} className="flex gap-3">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 text-lg backdrop-blur">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white backdrop-blur">
                   {benefit.icon}
                 </span>
                 <span>
