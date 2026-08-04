@@ -41,11 +41,11 @@ Demo por HTTP (`COOKIE_SECURE=false`) — para clientes reais, migrar ao modo pr
 
 Lacunas encontradas comparando requisitos × código × telas. Em ordem de prioridade:
 
-**Bloqueia o escritório de operar sozinho (APIs prontas, faltam as TELAS):**
-1. Tela **Equipe/Usuários** (criar contador/auditor/cliente, ativar/desativar, papel) — API `/users` completa
-2. **Vincular cliente ao portal** no detalhe da empresa — API `POST /companies/:id/clients/:userId` pronta
-3. **Editar empresa** + gerenciar contatos e responsáveis por área na tela — APIs prontas (detalhe hoje é só leitura)
-4. **Troca de senha** — ⚠️ nem o ENDPOINT existe (ChangePasswordDto está órfão no código); recuperação de senha depende de SMTP
+**~~Camada 1~~ ✅ CONCLUÍDA em 04/08 (validada na VPS: 24 unit + 41 e2e + smoke):**
+1. ✅ Tela **Equipe** (`/equipe`): criar usuários com papel, trocar papel, ativar/desativar (derruba sessões)
+2. ✅ **Vincular cliente ao portal** no detalhe da empresa (seção "Acesso ao portal")
+3. ✅ **Editar empresa** (modal) + contatos (add/remover) + responsáveis por área (select por área)
+4. ✅ **Troca de senha**: endpoint `POST /auth/change-password` (revoga todas as sessões) + tela `/senha` (link no topo)
 
 **Completa a experiência diária:**
 5. **Detalhe da tarefa** (checklist interativo + comentários — APIs prontas, UI só muda status)
