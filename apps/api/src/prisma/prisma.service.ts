@@ -32,6 +32,20 @@ type ScopedClient = ReturnType<PrismaService['createScopedClient']>;
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private scopedClient?: ScopedClient;
 
+  /**
+   * Referência ao client COM os delegates (.task, .user, ...).
+   * `new PrismaClient()` retorna um Proxy; dentro de métodos da classe, `this`
+   * é o alvo cru do Proxy e os delegates não resolvem (bug sutil pego em
+   * runtime na VPS). No construtor, `this` É o objeto retornado pelo super() —
+   * capturamos aqui para uso dentro da extensão scoped.
+   */
+  private readonly self: PrismaService;
+
+  constructor() {
+    super();
+    this.self = this;
+  }
+
   async onModuleInit(): Promise<void> {
     await this.$connect();
   }
@@ -51,7 +65,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   private createScopedClient() {
-    const base = this;
+    const base = this.self;
     return this.$extends({
       query: {
         $allModels: {
