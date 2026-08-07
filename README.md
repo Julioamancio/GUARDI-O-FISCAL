@@ -52,7 +52,7 @@ Lacunas encontradas comparando requisitos × código × telas. Em ordem de prior
 6. ✅ **Tarefa manual** pela tela + **Central de documentos** (`/documentos`: filtros, origem, versões, download seguro, upload direto)
 7. ✅ **Sino de notificações** no topo (badge de não lidas, marcar lida, atualiza a cada 60s)
 8. ✅ Superadmin **suspende/reativa** escritório na tabela (com confirmação)
-9. ✅ Visão **Kanban** (toggle Lista/Kanban) · ⬜ visão calendário (única pendência restante da camada)
+9. ✅ Visões **Kanban** e **Calendário** (toggle Lista/Kanban/Calendário; calendário mensal com navegação, chips por status e legenda)
 + bônus: login com **olhinho de senha** e **lembrar escritório/e-mail** (agente paralelo); rodapé com créditos + botão **📖 Manual de uso**
 
 **Produção real (infra):** SMTP · domínio+TLS · ClamAV · VPS dedicada (`install-vps.sh` ponta a ponta) · cron de backup da instância demo
