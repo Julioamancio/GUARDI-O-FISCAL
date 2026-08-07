@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { NotificationsBell } from './notifications-bell';
+import { BRAND_NAME } from '../../lib/brand';
 
 const STAFF_LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -56,7 +57,7 @@ export function Nav({
               className="h-8 w-8 object-contain"
               onError={(e) => (e.currentTarget.style.display = 'none')}
             />
-            Radar Contábil
+            {BRAND_NAME}
           </Link>
           {!isSuperadmin && (
             <nav className="flex items-center gap-1">

@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { BRAND_NAME } from '../lib/brand';
 
 export const metadata: Metadata = {
-  title: 'Radar Contábil',
+  title: BRAND_NAME,
   description:
     'Nenhuma obrigação esquecida. Nenhum documento perdido. Nenhum erro fiscal silencioso.',
   icons: {

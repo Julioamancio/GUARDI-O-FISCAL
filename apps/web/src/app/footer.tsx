@@ -1,10 +1,12 @@
+import { BRAND_NAME } from '../lib/brand';
+
 /** Rodapé padrão da plataforma: créditos + acesso ao manual. */
 export function Footer() {
   return (
     <footer className="mt-10 border-t border-gray-200 bg-white">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-4 text-xs text-gray-500 sm:flex-row">
         <p className="text-center sm:text-left">
-          Radar Contábil — Gestão e Prova para Escritórios de Contabilidade · Todos os direitos
+          {BRAND_NAME} — Gestão e Prova para Escritórios de Contabilidade · Todos os direitos
           reservados · Feito por Júlio Amâncio · © 2026
         </p>
         <a

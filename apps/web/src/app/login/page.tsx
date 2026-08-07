@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useState } from 'react';
 import { GlassDust } from './glass-dust';
+import { BRAND_NAME } from '../../lib/brand';
 
 const input =
   'w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30';
@@ -148,11 +149,11 @@ export default function LoginPage() {
         <div className="relative flex items-center gap-3">
           <img
             src="/logo.png"
-            alt="Logo do Radar Contábil"
+            alt={`Logo do ${BRAND_NAME}`}
             className="h-11 w-11 object-contain drop-shadow-lg"
             onError={(e) => (e.currentTarget.style.display = 'none')}
           />
-          <p className="text-2xl font-bold tracking-tight">Radar Contábil</p>
+          <p className="text-2xl font-bold tracking-tight">{BRAND_NAME}</p>
         </div>
 
         <div className="relative flex flex-1 flex-col justify-center py-10">
@@ -164,7 +165,7 @@ export default function LoginPage() {
             <span className="text-cyan-300">um prazo.</span>
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-brand-50/90">
-            O Radar Contábil vigia os vencimentos, cobra os documentos dos seus clientes e
+            O {BRAND_NAME} vigia os vencimentos, cobra os documentos dos seus clientes e
             guarda as provas — sozinho, todos os dias, para cada empresa da sua carteira.
           </p>
 
@@ -189,22 +190,14 @@ export default function LoginPage() {
         </div>
 
         <p className="relative text-xs text-brand-50/60">
-          Radar Contábil — Gestão e Prova para Escritórios de Contabilidade · Todos os direitos
+          {BRAND_NAME} — Gestão e Prova para Escritórios de Contabilidade · Todos os direitos
           reservados · Feito por Júlio Amâncio · © 2026
         </p>
       </section>
 
-      {/* Cartão de entrada com o mascote centralizado no vão à esquerda */}
+      {/* Cartão de entrada centralizado */}
       <section className="flex w-full items-center bg-gray-50 p-6 lg:w-1/2">
-        <div className="hidden flex-1 justify-center md:flex">
-          <img
-            src="/mascote.png"
-            alt="Mascote do Radar Contábil"
-            className="h-96 w-auto object-contain drop-shadow-2xl"
-            onError={(e) => (e.currentTarget.style.display = 'none')}
-          />
-        </div>
-        <div className="mx-auto w-full max-w-md md:mx-0">
+        <div className="mx-auto w-full max-w-md">
           <div className="mb-8 text-center lg:hidden">
             <img
               src="/logo.png"
@@ -212,7 +205,7 @@ export default function LoginPage() {
               className="mx-auto mb-3 h-20 w-auto object-contain"
               onError={(e) => (e.currentTarget.style.display = 'none')}
             />
-            <h1 className="text-3xl font-bold text-brand-700">Radar Contábil</h1>
+            <h1 className="text-3xl font-bold text-brand-700">{BRAND_NAME}</h1>
             <p className="mt-2 text-sm text-gray-600">
               Nenhuma obrigação esquecida. Nenhum documento perdido.
             </p>
@@ -355,8 +348,6 @@ export default function LoginPage() {
             ✨ Novos escritórios começam com 14 dias de teste grátis.
           </p>
         </div>
-        {/* espaçador direito: mantém o cartão no centro e o robô centrado no vão esquerdo */}
-        <div className="hidden flex-1 md:block" />
       </section>
     </main>
   );
