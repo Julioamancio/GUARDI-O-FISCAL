@@ -77,10 +77,8 @@ const BENEFITS = [
 
 export default function LoginPage() {
   const router = useRouter();
-  const [tenantSlug, setTenantSlug] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,8 +88,7 @@ export default function LoginPage() {
     try {
       const saved = localStorage.getItem('rc_login');
       if (saved) {
-        const { tenantSlug: savedTenant, email: savedEmail } = JSON.parse(saved);
-        if (savedTenant) setTenantSlug(savedTenant);
+        const { email: savedEmail } = JSON.parse(saved);
         if (savedEmail) setEmail(savedEmail);
         setRememberMe(true);
       }
@@ -108,11 +105,7 @@ export default function LoginPage() {
       const response = await fetch('/api/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          ...(isSuperadmin ? {} : { tenantSlug: tenantSlug.trim().toLowerCase() }),
-        }),
+        body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -121,7 +114,7 @@ export default function LoginPage() {
       }
       try {
         if (rememberMe) {
-          localStorage.setItem('rc_login', JSON.stringify({ tenantSlug, email }));
+          localStorage.setItem('rc_login', JSON.stringify({ email }));
         } else {
           localStorage.removeItem('rc_login');
         }
@@ -213,31 +206,9 @@ export default function LoginPage() {
 
           <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg shadow-brand-900/5">
             <h2 className="text-xl font-bold text-gray-900">Bem-vindo de volta 👋</h2>
-            <p className="mb-6 mt-1 text-sm text-gray-500">
-              {isSuperadmin
-                ? 'Acesso do administrador da plataforma.'
-                : 'Entre com os dados do seu escritório.'}
-            </p>
+            <p className="mb-6 mt-1 text-sm text-gray-500">Entre com seu e-mail e senha.</p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {!isSuperadmin && (
-                <div>
-                  <label htmlFor="tenant" className="mb-1 block text-sm font-medium text-gray-700">
-                    Escritório
-                  </label>
-                  <input
-                    id="tenant"
-                    type="text"
-                    required
-                    value={tenantSlug}
-                    onChange={(e) => setTenantSlug(e.target.value)}
-                    placeholder="ex.: demo"
-                    autoComplete="organization"
-                    className={input}
-                  />
-                </div>
-              )}
-
               <div>
                 <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
                   E-mail
@@ -315,7 +286,7 @@ export default function LoginPage() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="rounded border-gray-300"
                 />
-                Lembrar escritório e e-mail neste aparelho
+                Lembrar e-mail neste aparelho
               </label>
 
               {error && (
@@ -332,15 +303,6 @@ export default function LoginPage() {
                 {loading ? 'Entrando...' : 'Entrar no meu escritório'}
               </button>
 
-              <label className="flex cursor-pointer items-center justify-center gap-2 pt-1 text-xs text-gray-500">
-                <input
-                  type="checkbox"
-                  checked={isSuperadmin}
-                  onChange={(e) => setIsSuperadmin(e.target.checked)}
-                  className="rounded border-gray-300"
-                />
-                Sou administrador da plataforma
-              </label>
             </form>
           </div>
 

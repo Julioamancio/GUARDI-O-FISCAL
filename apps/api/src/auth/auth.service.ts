@@ -31,23 +31,44 @@ export class AuthService {
   async login(dto: LoginDto, meta: RequestMeta): Promise<{ user: AuthenticatedUser; tokens: AuthTokens }> {
     const invalid = new UnauthorizedException('Credenciais inválidas');
 
-    let tenantId: string | null = null;
+    const include = {
+      tenant: true,
+      roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } },
+    };
+
+    let user;
     if (dto.tenantSlug) {
       const tenant = await this.prisma.tenant.findUnique({ where: { slug: dto.tenantSlug } });
       if (!tenant || tenant.deletedAt || tenant.status === 'CANCELED' || tenant.status === 'SUSPENDED') {
         throw invalid;
       }
-      tenantId = tenant.id;
+      user = await this.prisma.user.findFirst({
+        where: { email: dto.email.toLowerCase(), tenantId: tenant.id, deletedAt: null },
+        include,
+      });
+    } else {
+      // Sem escritório informado: resolve pelo e-mail. Se o mesmo e-mail existir
+      // em mais de um escritório, o slug volta a ser obrigatório para desambiguar.
+      const candidates = await this.prisma.user.findMany({
+        where: { email: dto.email.toLowerCase(), deletedAt: null },
+        include,
+        take: 2,
+      });
+      if (candidates.length > 1) {
+        throw new UnauthorizedException(
+          'Este e-mail está em mais de um escritório; informe também o escritório.',
+        );
+      }
+      user = candidates[0];
+      if (
+        user?.tenant &&
+        (user.tenant.deletedAt || user.tenant.status === 'CANCELED' || user.tenant.status === 'SUSPENDED')
+      ) {
+        throw invalid;
+      }
     }
-
-    const user = await this.prisma.user.findFirst({
-      where: { email: dto.email.toLowerCase(), tenantId, deletedAt: null },
-      include: {
-        tenant: true,
-        roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } },
-      },
-    });
     if (!user || !user.isActive) throw invalid;
+    const tenantId = user.tenantId;
 
     const passwordOk = await argon2.verify(user.passwordHash, dto.password);
     if (!passwordOk) {
