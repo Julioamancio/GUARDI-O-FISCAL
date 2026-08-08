@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { bibliotecaLeafSlugs } from '@guardiao/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -58,8 +59,12 @@ export class PortalService {
   }
 
   /** Upload do cliente para um item solicitado (reenvio gera nova versão). */
-  async uploadToItem(itemId: string, file: UploadedFileLike) {
+  async uploadToItem(itemId: string, file: UploadedFileLike, category?: string) {
     this.documents.validateFile(file);
+    // Tipo de documento é OBRIGATÓRIO no portal: é ele que arquiva na pasta certa
+    if (!category || !bibliotecaLeafSlugs().includes(category)) {
+      throw new BadRequestException('Selecione o tipo de documento antes de enviar o arquivo');
+    }
     const companyIds = await this.linkedCompanyIds();
 
     const item = await this.prisma.scoped.documentRequestItem.findFirst({
@@ -77,6 +82,7 @@ export class PortalService {
         documentId: item.documents[0]?.id, // reenvio -> nova versão do mesmo documento
         requestItemId: item.id,
         name: item.name,
+        category,
         competence: item.request.competence ?? undefined,
       },
       file,
@@ -133,13 +139,13 @@ export class PortalService {
     });
   }
 
-  /** Download pelo cliente: só de documentos das empresas vinculadas. */
-  async downloadUrl(documentId: string) {
+  /** Download/visualização pelo cliente: só de documentos das empresas vinculadas. */
+  async downloadUrl(documentId: string, inline = false) {
     const companyIds = await this.linkedCompanyIds();
     const document = await this.prisma.scoped.document.findFirst({
       where: { id: documentId, companyId: { in: companyIds }, deletedAt: null },
     });
     if (!document) throw new NotFoundException('Documento não encontrado');
-    return this.documents.downloadUrl(documentId);
+    return this.documents.downloadUrl(documentId, inline);
   }
 }

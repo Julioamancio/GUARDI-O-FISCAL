@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
+import { BIBLIOTECA } from '@guardiao/shared';
 import { clientApi } from '@/lib/client-api';
 
 const STATUS_INFO: Record<string, { label: string; className: string }> = {
@@ -27,6 +28,7 @@ export function UploadItem({
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [category, setCategory] = useState('');
   const info = STATUS_INFO[status] ?? STATUS_INFO.PENDENTE;
   const canUpload = status === 'PENDENTE' || status === 'REJEITADO' || status === 'RECEBIDO';
 
@@ -36,6 +38,7 @@ export function UploadItem({
     try {
       const body = new FormData();
       body.append('file', file);
+      body.append('category', category);
       const response = await fetch(`/api/proxy/portal/items/${itemId}/upload`, { method: 'POST', body });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -58,7 +61,35 @@ export function UploadItem({
           <span className="font-medium text-gray-800">{name}</span>
         </div>
         {canUpload && (
-          <div>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Tipo de documento OBRIGATÓRIO — define em qual pasta/categoria o arquivo entra */}
+            <select
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setError(null);
+              }}
+              className={`rounded-lg border px-2 py-1.5 text-xs ${
+                category ? 'border-gray-300 text-gray-700' : 'border-amber-400 text-amber-700'
+              }`}
+            >
+              <option value="">Tipo de documento *</option>
+              {BIBLIOTECA.map((cat) =>
+                cat.children ? (
+                  <optgroup key={cat.slug} label={`${cat.icon ?? ''} ${cat.label}`.trim()}>
+                    {cat.children.map((child) => (
+                      <option key={child.slug} value={child.slug}>
+                        {child.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : (
+                  <option key={cat.slug} value={cat.slug}>
+                    {`${cat.icon ?? ''} ${cat.label}`.trim()}
+                  </option>
+                ),
+              )}
+            </select>
             <input
               ref={fileRef}
               type="file"
@@ -67,7 +98,13 @@ export function UploadItem({
               onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
             />
             <button
-              onClick={() => fileRef.current?.click()}
+              onClick={() => {
+                if (!category) {
+                  setError('Selecione primeiro o tipo de documento — é ele que define a pasta certa do arquivo.');
+                  return;
+                }
+                fileRef.current?.click();
+              }}
               disabled={busy}
               className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
             >

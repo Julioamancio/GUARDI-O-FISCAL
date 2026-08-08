@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { BIBLIOTECA, BibliotecaItem } from '@guardiao/shared';
 import { clientApi } from '@/lib/client-api';
+import { DocumentViewLink } from './document-viewer';
 
 export interface LibraryDoc {
   id: string;
@@ -196,8 +197,14 @@ function DocList({
     <ul className={`pb-2 pr-5 ${indent ? 'pl-10' : 'pl-5'}`}>
       {docs.map((doc) => (
         <li key={doc.id} className="flex items-center justify-between gap-2 py-1.5">
-          <span className="min-w-0 flex-1 truncate text-xs text-gray-700" title={doc.name}>
-            📄 {doc.name}
+          <span className="min-w-0 flex-1 truncate text-xs" title={`${doc.name} — clique para visualizar`}>
+            <DocumentViewLink
+              documentId={doc.id}
+              downloadBase={downloadBase}
+              className="text-xs text-gray-700 hover:text-brand-700 hover:underline"
+            >
+              📄 {doc.name}
+            </DocumentViewLink>
             <span className="ml-1.5 text-[11px] text-gray-400">
               v{doc.version} · {fmtDate(doc.createdAt)}
               {doc.competence ? ` · ${doc.competence}` : ''}

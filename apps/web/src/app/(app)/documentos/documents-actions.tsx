@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
+import { BIBLIOTECA } from '@guardiao/shared';
 
 const input =
   'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500';
@@ -77,8 +78,27 @@ export function UploadDocForm({ companies }: { companies: Array<{ id: string; ra
             <input name="competence" pattern="\d{4}-\d{2}" placeholder="2026-08" className={input} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">Categoria</label>
-            <input name="category" maxLength={60} placeholder="ex.: contratos" className={input} />
+            <label className="mb-1 block text-xs font-medium text-gray-500">Tipo de documento *</label>
+            <select name="category" required defaultValue="" className={input}>
+              <option value="" disabled>
+                Selecione o tipo...
+              </option>
+              {BIBLIOTECA.map((cat) =>
+                cat.children ? (
+                  <optgroup key={cat.slug} label={`${cat.icon ?? ''} ${cat.label}`.trim()}>
+                    {cat.children.map((child) => (
+                      <option key={child.slug} value={child.slug}>
+                        {child.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : (
+                  <option key={cat.slug} value={cat.slug}>
+                    {`${cat.icon ?? ''} ${cat.label}`.trim()}
+                  </option>
+                ),
+              )}
+            </select>
           </div>
         </div>
         <div>

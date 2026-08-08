@@ -83,15 +83,19 @@ export class DocumentsController {
 
   @Get()
   @RequirePermissions('documents.read')
-  list(@Query('companyId') companyId?: string, @Query('competence') competence?: string) {
-    return this.documentsService.list(companyId, competence);
+  list(
+    @Query('companyId') companyId?: string,
+    @Query('competence') competence?: string,
+    @Query('category') category?: string,
+  ) {
+    return this.documentsService.list(companyId, competence, category);
   }
 
   @Get(':id/download')
   @RequirePermissions('documents.read')
-  @ApiOperation({ summary: 'Link assinado temporário (5 min) da última versão' })
-  download(@Param('id', ParseUUIDPipe) id: string) {
-    return this.documentsService.downloadUrl(id);
+  @ApiOperation({ summary: 'Link assinado temporário (5 min); inline=true para visualizar' })
+  download(@Param('id', ParseUUIDPipe) id: string, @Query('inline') inline?: string) {
+    return this.documentsService.downloadUrl(id, inline === 'true');
   }
 }
 
@@ -119,8 +123,12 @@ export class PortalController {
   @UseInterceptors(fileUpload())
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Cliente envia arquivo para um item solicitado' })
-  upload(@Param('itemId', ParseUUIDPipe) itemId: string, @UploadedFile() file: UploadedFileLike) {
-    return this.portalService.uploadToItem(itemId, file);
+  upload(
+    @Param('itemId', ParseUUIDPipe) itemId: string,
+    @UploadedFile() file: UploadedFileLike,
+    @Body('category') category?: string,
+  ) {
+    return this.portalService.uploadToItem(itemId, file, category);
   }
 
   @Get('documents')
@@ -131,7 +139,7 @@ export class PortalController {
 
   @Get('documents/:id/download')
   @RequirePermissions('documents.read')
-  download(@Param('id', ParseUUIDPipe) id: string) {
-    return this.portalService.downloadUrl(id);
+  download(@Param('id', ParseUUIDPipe) id: string, @Query('inline') inline?: string) {
+    return this.portalService.downloadUrl(id, inline === 'true');
   }
 }

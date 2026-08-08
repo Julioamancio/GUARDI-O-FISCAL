@@ -77,6 +77,14 @@ export class DocumentsService {
         : null;
     if (dto.documentId && !document) throw new NotFoundException('Documento não encontrado');
 
+    // Reenvio com tipo diferente: a classificação mais recente vale
+    if (document && dto.category && document.category !== dto.category) {
+      document = await this.prisma.scoped.document.update({
+        where: { id: document.id },
+        data: { category: dto.category },
+      });
+    }
+
     if (!document) {
       document = await this.prisma.scoped.document.create({
         data: {
@@ -136,12 +144,14 @@ export class DocumentsService {
     return this.storeUpload(dto, file);
   }
 
-  async list(companyId?: string, competence?: string) {
+  async list(companyId?: string, competence?: string, category?: string) {
     return this.prisma.scoped.document.findMany({
       where: {
         deletedAt: null,
         ...(companyId ? { companyId } : {}),
         ...(competence ? { competence } : {}),
+        // "declaracoes" pega todas as subcategorias (declaracoes/...)
+        ...(category ? { category: { startsWith: category } } : {}),
       },
       include: {
         company: { select: { id: true, razaoSocial: true } },
@@ -154,8 +164,8 @@ export class DocumentsService {
     });
   }
 
-  /** Link temporário de download da última versão (auditado). */
-  async downloadUrl(documentId: string) {
+  /** Link temporário da última versão (auditado). inline=true = visualizador. */
+  async downloadUrl(documentId: string, inline = false) {
     const document = await this.prisma.scoped.document.findFirst({
       where: { id: documentId, deletedAt: null },
       include: { versions: { orderBy: { version: 'desc' }, take: 1 } },
@@ -164,14 +174,20 @@ export class DocumentsService {
       throw new NotFoundException('Documento não encontrado');
     }
     const latest = document.versions[0];
-    const url = await this.storage.presignedDownloadUrl(latest.objectKey, document.name);
+    const url = await this.storage.presignedDownloadUrl(latest.objectKey, document.name, 300, inline);
     await this.audit.log({
-      action: 'documents.download',
+      action: inline ? 'documents.view' : 'documents.download',
       entity: 'Document',
       entityId: documentId,
       after: { version: latest.version },
     });
-    return { url, expiresInSeconds: 300, name: document.name, version: latest.version };
+    return {
+      url,
+      expiresInSeconds: 300,
+      name: document.name,
+      version: latest.version,
+      mimeType: latest.mimeType,
+    };
   }
 
   private tid(): string {

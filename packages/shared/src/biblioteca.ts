@@ -61,6 +61,11 @@ export function bibliotecaLabel(slug: string | null | undefined): string {
   return slug;
 }
 
+/** Slugs selecionáveis em upload (folhas: categorias sem filhos + subcategorias). */
+export function bibliotecaLeafSlugs(): string[] {
+  return BIBLIOTECA.flatMap((c) => (c.children ? c.children.map((x) => x.slug) : [c.slug]));
+}
+
 /** Segmentos de pasta (nomes legíveis) para o espelho em disco. */
 export function bibliotecaFolderSegments(slug: string | null | undefined): string[] {
   if (!slug) return [];

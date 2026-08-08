@@ -1,5 +1,7 @@
+import { BIBLIOTECA, bibliotecaLabel } from '@guardiao/shared';
 import { apiFetch } from '@/lib/api';
 import { DownloadButton } from '../solicitacoes/[id]/review-actions';
+import { DocumentViewLink } from '../document-viewer';
 import { UploadDocForm } from './documents-actions';
 
 interface DocumentRow {
@@ -21,12 +23,13 @@ const fmtSize = (bytes: number) =>
 export default async function DocumentosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ companyId?: string; competence?: string }>;
+  searchParams: Promise<{ companyId?: string; competence?: string; category?: string }>;
 }) {
   const params = await searchParams;
   const query = new URLSearchParams();
   if (params.companyId) query.set('companyId', params.companyId);
   if (params.competence) query.set('competence', params.competence);
+  if (params.category) query.set('category', params.category);
 
   const [documents, companiesResp] = await Promise.all([
     apiFetch<DocumentRow[]>(`/documents?${query.toString()}`),
@@ -55,6 +58,35 @@ export default async function DocumentosPage({
                 {company.razaoSocial}
               </option>
             ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="category" className="mb-1 block text-xs font-medium text-gray-500">
+            Tipo de documento
+          </label>
+          <select
+            id="category"
+            name="category"
+            defaultValue={params.category ?? ''}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          >
+            <option value="">Todos</option>
+            {BIBLIOTECA.map((cat) =>
+              cat.children ? (
+                <optgroup key={cat.slug} label={`${cat.icon ?? ''} ${cat.label}`.trim()}>
+                  <option value={cat.slug}>Todas as {cat.label.toLowerCase()}</option>
+                  {cat.children.map((child) => (
+                    <option key={child.slug} value={child.slug}>
+                      {child.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : (
+                <option key={cat.slug} value={cat.slug}>
+                  {`${cat.icon ?? ''} ${cat.label}`.trim()}
+                </option>
+              ),
+            )}
           </select>
         </div>
         <div>
@@ -102,8 +134,14 @@ export default async function DocumentosPage({
               return (
                 <tr key={doc.id} className="border-b border-gray-100 last:border-0 hover:bg-brand-50/40">
                   <td className="px-4 py-3">
-                    <span className="font-medium text-gray-800">📄 {doc.name}</span>
-                    {doc.category && <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">{doc.category}</span>}
+                    <DocumentViewLink documentId={doc.id} downloadBase="/documents">
+                      📄 {doc.name}
+                    </DocumentViewLink>
+                    {doc.category && (
+                      <span className="ml-2 rounded bg-brand-50 px-1.5 py-0.5 text-xs text-brand-700">
+                        {bibliotecaLabel(doc.category)}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{doc.company.razaoSocial}</td>
                   <td className="px-4 py-3 font-mono text-xs">{doc.competence ?? '—'}</td>

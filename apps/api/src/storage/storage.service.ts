@@ -37,11 +37,19 @@ export class StorageService implements OnModuleInit {
     });
   }
 
-  /** Link temporário de download (padrão 5 min), com nome amigável no navegador. */
-  async presignedDownloadUrl(objectKey: string, filename: string, expirySeconds = 300): Promise<string> {
+  /**
+   * Link temporário (padrão 5 min) com nome amigável no navegador.
+   * inline=true renderiza no navegador (visualizador embutido) em vez de baixar.
+   */
+  async presignedDownloadUrl(
+    objectKey: string,
+    filename: string,
+    expirySeconds = 300,
+    inline = false,
+  ): Promise<string> {
     const safeName = filename.replace(/[^\p{L}\p{N}._ -]/gu, '_');
     return this.client.presignedGetObject(this.bucket, objectKey, expirySeconds, {
-      'response-content-disposition': `attachment; filename="${safeName}"`,
+      'response-content-disposition': `${inline ? 'inline' : 'attachment'}; filename="${safeName}"`,
     });
   }
 
