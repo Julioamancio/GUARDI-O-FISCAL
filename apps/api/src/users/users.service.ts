@@ -50,6 +50,10 @@ export class UsersService {
   async create(dto: CreateUserDto) {
     const tenantId = this.requireTenant();
 
+    // Regra de negócio: papéis que não são administradores (ex.: contador) só
+    // cadastram CLIENTES do portal; contador/auditor/admin é exclusivo do admin.
+    this.assertCanAssignRole(dto.role);
+
     // Limite de usuários do plano
     const tenant = await this.prisma.tenant.findUniqueOrThrow({
       where: { id: tenantId },
@@ -100,6 +104,7 @@ export class UsersService {
 
     let roleUpdate = {};
     if (dto.role) {
+      this.assertCanAssignRole(dto.role);
       const role = await this.prisma.role.findUniqueOrThrow({ where: { slug: dto.role } });
       roleUpdate = { roles: { deleteMany: {}, create: { roleId: role.id } } };
     }
@@ -150,6 +155,18 @@ export class UsersService {
     });
     await this.audit.log({ action: 'users.delete', entity: 'User', entityId: id });
     return { deleted: true };
+  }
+
+  /** Só administrador do escritório (ou superadmin) atribui papéis além de "client". */
+  private assertCanAssignRole(role: string): void {
+    if (role === 'client') return;
+    const ctx = TenantContext.get();
+    const isAdmin = ctx?.tenantId === null || (ctx?.roles ?? []).includes('tenant_admin');
+    if (!isAdmin) {
+      throw new ForbiddenException(
+        'Apenas o administrador do escritório pode cadastrar contadores, auditores ou administradores',
+      );
+    }
   }
 
   private requireTenant(): string {

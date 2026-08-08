@@ -40,9 +40,11 @@ const ROLES: Array<{ slug: string; name: string; permissions: string[] | 'ALL' }
   {
     slug: 'accountant',
     name: 'Contador / Analista',
+    // users.manage aqui NÃO libera criar contador: o UsersService restringe
+    // papéis não-client ao tenant_admin (assertCanAssignRole).
     permissions: [
-      'companies.read', 'tasks.read', 'tasks.write', 'documents.read',
-      'documents.write', 'documents.request', 'reports.read',
+      'companies.read', 'companies.write', 'users.manage', 'tasks.read', 'tasks.write',
+      'documents.read', 'documents.write', 'documents.request', 'reports.read',
     ],
   },
   { slug: 'client', name: 'Cliente do Escritório', permissions: ['documents.read', 'documents.write'] },
