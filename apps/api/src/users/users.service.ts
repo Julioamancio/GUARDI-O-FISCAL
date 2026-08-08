@@ -93,9 +93,10 @@ export class UsersService {
   async update(id: string, dto: UpdateUserDto) {
     const current = await this.prisma.scoped.user.findFirst({
       where: { id, deletedAt: null },
-      select: { id: true, name: true, isActive: true },
+      select: { id: true, name: true, isActive: true, roles: { select: { role: { select: { slug: true } } } } },
     });
     if (!current) throw new NotFoundException('Usuário não encontrado');
+    this.assertCanManageTarget(current.roles.map((r) => r.role.slug));
 
     const ctx = TenantContext.get();
     if (ctx?.userId === id && dto.isActive === false) {
@@ -109,11 +110,22 @@ export class UsersService {
       roleUpdate = { roles: { deleteMany: {}, create: { roleId: role.id } } };
     }
 
+    let emailUpdate = {};
+    if (dto.email !== undefined) {
+      const email = dto.email.toLowerCase();
+      const clash = await this.prisma.scoped.user.findFirst({
+        where: { email, deletedAt: null, id: { not: id } },
+      });
+      if (clash) throw new ConflictException('Já existe um usuário com este e-mail no escritório');
+      emailUpdate = { email };
+    }
+
     const updated = await this.prisma.scoped.user.update({
       where: { id },
       data: {
         ...(dto.name !== undefined ? { name: dto.name } : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+        ...emailUpdate,
         ...roleUpdate,
       },
       select: SAFE_USER_SELECT,
@@ -142,8 +154,23 @@ export class UsersService {
     if (ctx?.userId === id) {
       throw new BadRequestException('Você não pode excluir a própria conta');
     }
-    const current = await this.prisma.scoped.user.findFirst({ where: { id, deletedAt: null } });
+    const current = await this.prisma.scoped.user.findFirst({
+      where: { id, deletedAt: null },
+      include: { roles: { include: { role: true } } },
+    });
     if (!current) throw new NotFoundException('Usuário não encontrado');
+    const targetRoles = current.roles.map((r) => r.role.slug);
+    this.assertCanManageTarget(targetRoles);
+
+    // Nunca deixar o escritório sem administrador
+    if (targetRoles.includes('tenant_admin')) {
+      const admins = await this.prisma.scoped.user.count({
+        where: { deletedAt: null, isActive: true, roles: { some: { role: { slug: 'tenant_admin' } } } },
+      });
+      if (admins <= 1) {
+        throw new BadRequestException('Não é possível excluir o único administrador do escritório');
+      }
+    }
 
     await this.prisma.scoped.user.update({
       where: { id },
@@ -155,6 +182,18 @@ export class UsersService {
     });
     await this.audit.log({ action: 'users.delete', entity: 'User', entityId: id });
     return { deleted: true };
+  }
+
+  /** Só administrador (ou superadmin) mexe em usuários que NÃO são clientes do portal. */
+  private assertCanManageTarget(targetRoles: string[]): void {
+    if (targetRoles.every((r) => r === 'client')) return;
+    const ctx = TenantContext.get();
+    const isAdmin = ctx?.tenantId === null || (ctx?.roles ?? []).includes('tenant_admin');
+    if (!isAdmin) {
+      throw new ForbiddenException(
+        'Apenas o administrador do escritório pode editar ou excluir contadores, auditores ou administradores',
+      );
+    }
   }
 
   /** Só administrador do escritório (ou superadmin) atribui papéis além de "client". */

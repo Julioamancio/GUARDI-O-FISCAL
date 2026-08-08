@@ -11,6 +11,7 @@ interface ImportResult {
   confirmed: boolean;
   errors: Array<{ line: number; error: string }>;
   preview: Array<{ razaoSocial: string; cnpj: string }>;
+  portalAccess?: Array<{ empresa: string; email: string; senha?: string; obs?: string }>;
 }
 
 /**
@@ -116,6 +117,47 @@ export function ImportCsv() {
                 </li>
               ))}
             </ul>
+          )}
+          {result.confirmed && (result.portalAccess?.length ?? 0) > 0 && (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <p className="font-semibold text-amber-900">
+                🔑 Acessos ao portal criados automaticamente — anote as senhas AGORA (elas não
+                aparecem de novo):
+              </p>
+              <div className="mt-2 overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-left text-amber-800">
+                      <th className="py-1 pr-4">Empresa</th>
+                      <th className="py-1 pr-4">Login (e-mail)</th>
+                      <th className="py-1">Senha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.portalAccess!.map((a, i) => (
+                      <tr key={i} className="border-t border-amber-100">
+                        <td className="py-1 pr-4">{a.empresa}</td>
+                        <td className="py-1 pr-4">{a.email}</td>
+                        <td className="py-1 font-mono">
+                          {a.senha ?? <span className="text-amber-700">{a.obs ?? 'já tinha acesso — senha antiga vale'}</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button
+                onClick={() => {
+                  const linhas = result.portalAccess!
+                    .map((a) => `${a.empresa}\t${a.email}\t${a.senha ?? a.obs ?? 'senha existente'}`)
+                    .join('\n');
+                  void navigator.clipboard.writeText(`Empresa\tLogin\tSenha\n${linhas}`);
+                }}
+                className="mt-2 rounded-lg border border-amber-400 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+              >
+                📋 Copiar tudo
+              </button>
+            </div>
           )}
           {!result.confirmed && result.validRows > 0 && (
             <button

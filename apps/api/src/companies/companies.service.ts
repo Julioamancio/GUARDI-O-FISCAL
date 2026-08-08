@@ -6,6 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import * as argon2 from 'argon2';
+import { randomBytes } from 'node:crypto';
 import { isValidCnpj, isValidCnpjOrCpf, normalizeCnpj } from '@guardiao/shared';
 import { parseCsv } from '../common/csv';
 import { PrismaService } from '../prisma/prisma.service';
@@ -336,6 +338,7 @@ export class CompaniesService {
     });
 
     let created = 0;
+    const portalAccess: Array<{ empresa: string; email: string; senha?: string; obs?: string }> = [];
     if (confirm && valid.length > 0) {
       // Limite do plano considerado sobre o total final
       const tenant = await this.prisma.tenant.findUniqueOrThrow({
@@ -359,14 +362,15 @@ export class CompaniesService {
       });
       created = result.count;
 
+      const companies = await this.prisma.scoped.company.findMany({
+        where: { cnpj: { in: valid.map((v) => v.cnpj) } },
+        select: { id: true, cnpj: true },
+      });
+      const idByCnpj = new Map(companies.map((c) => [c.cnpj, c.id]));
+
       // Coluna "contato" na planilha vira o contato principal da empresa
       const contactRows = valid.filter((v) => v.contato);
       if (contactRows.length > 0) {
-        const companies = await this.prisma.scoped.company.findMany({
-          where: { cnpj: { in: contactRows.map((v) => v.cnpj) } },
-          select: { id: true, cnpj: true },
-        });
-        const idByCnpj = new Map(companies.map((c) => [c.cnpj, c.id]));
         await this.prisma.companyContact.createMany({
           data: contactRows.flatMap((v) => {
             const companyId = idByCnpj.get(v.cnpj);
@@ -375,6 +379,47 @@ export class CompaniesService {
               : [];
           }),
         });
+      }
+
+      // A empresa É o cliente: linha com e-mail ganha automaticamente o acesso
+      // ao portal — usuário-cliente criado (login = e-mail, senha aleatória)
+      // e vinculado à empresa. Senha aparece UMA vez, no resultado da importação.
+      const clientRole = await this.prisma.role.findUnique({ where: { slug: 'client' } });
+      for (const v of valid.filter((r) => r.email)) {
+        const companyId = idByCnpj.get(v.cnpj);
+        if (!companyId || !clientRole) continue;
+        const email = v.email!.toLowerCase();
+        let user = await this.prisma.scoped.user.findFirst({
+          where: { email, deletedAt: null },
+          include: { roles: { include: { role: true } } },
+        });
+        if (user && !user.roles.some((r) => r.role.slug === 'client')) {
+          // e-mail pertence a um funcionário do escritório — não vira portal
+          portalAccess.push({ empresa: v.razaoSocial, email, obs: 'e-mail já usado por um funcionário; vincule outro' });
+          continue;
+        }
+        let senha: string | undefined;
+        if (!user) {
+          senha = `${randomBytes(6).toString('hex')}Gf1`;
+          user = await this.prisma.scoped.user.create({
+            data: {
+              name: v.contato || v.razaoSocial,
+              email,
+              passwordHash: await argon2.hash(senha),
+              roles: { create: { roleId: clientRole.id } },
+            },
+            include: { roles: { include: { role: true } } },
+          });
+        }
+        const linked = await this.prisma.scoped.companyClientAccess.findFirst({
+          where: { companyId, userId: user.id },
+        });
+        if (!linked) {
+          await this.prisma.scoped.companyClientAccess.create({
+            data: { companyId, userId: user.id, tenantId },
+          });
+        }
+        portalAccess.push({ empresa: v.razaoSocial, email, senha });
       }
       await this.audit.log({
         action: 'companies.import',
@@ -391,6 +436,7 @@ export class CompaniesService {
       confirmed: confirm,
       errors: errors.slice(0, 100),
       preview: confirm ? [] : valid.slice(0, 10),
+      portalAccess,
     };
   }
 

@@ -35,6 +35,11 @@ export class UpdateUserDto {
   @MaxLength(120)
   name?: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
   @ApiPropertyOptional({ enum: TENANT_ROLES })
   @IsOptional()
   @IsIn(TENANT_ROLES as unknown as string[])
