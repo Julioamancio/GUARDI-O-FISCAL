@@ -1,6 +1,7 @@
 ﻿import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { mkdir, writeFile, access } from 'node:fs/promises';
 import { join } from 'node:path';
+import { bibliotecaFolderSegments } from '@guardiao/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from './storage.service';
 
@@ -54,10 +55,13 @@ export class CompanyFoldersService implements OnModuleInit {
       });
       if (!version) return;
       const company = version.document.company;
+      // Categoria da Biblioteca vira subpasta legível (ex.: Declarações/PGDAS-D)
+      const categoria = bibliotecaFolderSegments(version.document.category).map((s) => this.sanitize(s));
       const dir = join(
         this.baseDir,
         this.sanitize(company.tenant.slug),
         this.sanitize(`${company.cnpj} - ${company.razaoSocial}`),
+        ...categoria,
         this.sanitize(version.document.competence ?? 'geral'),
       );
       const originalName = version.objectKey.split('/').pop()?.replace(/^v\d+-[0-9a-f]{8}-/, '') ?? 'arquivo';

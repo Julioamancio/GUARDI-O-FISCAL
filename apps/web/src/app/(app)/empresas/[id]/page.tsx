@@ -9,6 +9,7 @@ import {
   ResponsiblesManager,
   SimpleUser,
 } from './company-manage';
+import { BibliotecaPanel, LibraryDoc } from '../../biblioteca-panel';
 
 interface CompanyDetail {
   id: string;
@@ -71,6 +72,25 @@ export default async function EmpresaDetailPage({ params }: { params: Promise<{ 
     notFound();
   }
   const templates = await apiFetch<Template[]>('/obligation-templates');
+
+  // Biblioteca: todos os documentos da empresa, agrupados por categoria no painel
+  interface ApiDoc {
+    id: string;
+    name: string;
+    category: string | null;
+    competence: string | null;
+    createdAt: string;
+    versions: Array<{ version: number }>;
+  }
+  const rawDocs = await apiFetch<ApiDoc[]>(`/documents?companyId=${id}`).catch(() => [] as ApiDoc[]);
+  const libraryDocs: LibraryDoc[] = rawDocs.map((d) => ({
+    id: d.id,
+    name: d.name,
+    category: d.category,
+    competence: d.competence,
+    createdAt: d.createdAt,
+    version: d.versions[0]?.version ?? 1,
+  }));
 
   // Lista de usuários (para responsáveis e portal) — só admins têm users.manage
   let allUsers: SimpleUser[] = [];
@@ -155,6 +175,8 @@ export default async function EmpresaDetailPage({ params }: { params: Promise<{ 
         </section>
 
         <div className="space-y-6">
+          <BibliotecaPanel documents={libraryDocs} downloadBase="/documents" companyId={company.id} />
+
           <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h2 className="mb-3 font-semibold text-gray-800">Responsáveis por área</h2>
             <ResponsiblesManager

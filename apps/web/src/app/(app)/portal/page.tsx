@@ -1,5 +1,6 @@
 import { apiFetch } from '@/lib/api';
-import { PortalDownloadButton, UploadItem } from './upload-item';
+import { UploadItem } from './upload-item';
+import { BibliotecaPanel, LibraryDoc } from '../biblioteca-panel';
 
 interface Overview {
   companies: Array<{ id: string; razaoSocial: string; nomeFantasia: string | null }>;
@@ -19,6 +20,8 @@ interface PortalRequest {
 interface PortalDocument {
   id: string;
   name: string;
+  category: string | null;
+  competence: string | null;
   createdAt: string;
   company: { razaoSocial: string };
   versions: Array<{ version: number; size: number }>;
@@ -37,6 +40,17 @@ export default async function PortalPage() {
   const pending = requests.filter((r) => r.status === 'ABERTA' || r.status === 'PARCIAL');
   const done = requests.filter((r) => r.status === 'CONCLUIDA');
 
+  const libraryDocs: LibraryDoc[] = documents.map((d) => ({
+    id: d.id,
+    name: d.name,
+    category: d.category,
+    competence: d.competence,
+    createdAt: d.createdAt,
+    version: d.versions[0]?.version ?? 1,
+    companyName: d.company.razaoSocial,
+  }));
+  const multiCompany = overview.companies.length > 1;
+
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold text-brand-700">Portal do Cliente</h1>
@@ -47,6 +61,8 @@ export default async function PortalPage() {
           : ' — tudo em dia ✓'}
       </p>
 
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+      <div className="lg:col-span-2">
       {pending.length === 0 && (
         <div className="rounded-xl border border-green-100 bg-green-50 p-5 text-sm text-green-800">
           Nenhum documento pendente. Quando o escritório solicitar algo, aparecerá aqui e você
@@ -87,24 +103,14 @@ export default async function PortalPage() {
           ✓ {done.length} solicitação(ões) concluída(s) — todos os documentos conferidos e aprovados.
         </p>
       )}
+      </div>
 
-      <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-3 font-semibold text-gray-800">Documentos enviados</h2>
-        {documents.length === 0 && <p className="text-sm text-gray-500">Nenhum documento enviado ainda.</p>}
-        <ul className="divide-y divide-gray-100 text-sm">
-          {documents.map((doc) => (
-            <li key={doc.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
-              <span className="text-gray-700">
-                📄 {doc.name}
-                <span className="ml-2 text-xs text-gray-500">
-                  v{doc.versions[0]?.version} · {fmtDate(doc.createdAt)} · {doc.company.razaoSocial}
-                </span>
-              </span>
-              <PortalDownloadButton documentId={doc.id} />
-            </li>
-          ))}
-        </ul>
-      </section>
+      <BibliotecaPanel
+        documents={libraryDocs}
+        downloadBase="/portal/documents"
+        showCompany={multiCompany}
+      />
+      </div>
     </div>
   );
 }

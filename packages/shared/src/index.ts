@@ -5,6 +5,7 @@
 
 export * from './due-date';
 export * from './cnpj';
+export * from './biblioteca';
 
 export const ROLES = {
   SUPERADMIN: 'superadmin',
