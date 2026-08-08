@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
-import { BIBLIOTECA } from '@guardiao/shared';
 import { clientApi } from '@/lib/client-api';
+import { CategoryMenu } from '../category-menu';
 
 const STATUS_INFO: Record<string, { label: string; className: string }> = {
   PENDENTE: { label: 'Aguardando envio', className: 'bg-amber-50 text-amber-700' },
@@ -63,33 +63,18 @@ export function UploadItem({
         {canUpload && (
           <div className="flex flex-wrap items-center gap-2">
             {/* Tipo de documento OBRIGATÓRIO — define em qual pasta/categoria o arquivo entra */}
-            <select
-              value={category}
-              onChange={(e) => {
-                setCategory(e.target.value);
-                setError(null);
-              }}
-              className={`rounded-lg border px-2 py-1.5 text-xs ${
-                category ? 'border-gray-300 text-gray-700' : 'border-amber-400 text-amber-700'
-              }`}
-            >
-              <option value="">Tipo de documento *</option>
-              {BIBLIOTECA.map((cat) =>
-                cat.children ? (
-                  <optgroup key={cat.slug} label={`${cat.icon ?? ''} ${cat.label}`.trim()}>
-                    {cat.children.map((child) => (
-                      <option key={child.slug} value={child.slug}>
-                        {child.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                ) : (
-                  <option key={cat.slug} value={cat.slug}>
-                    {`${cat.icon ?? ''} ${cat.label}`.trim()}
-                  </option>
-                ),
-              )}
-            </select>
+            <div className="w-56">
+              <CategoryMenu
+                value={category}
+                onChange={(v) => {
+                  setCategory(v);
+                  setError(null);
+                }}
+                placeholder="Tipo de documento *"
+                highlightEmpty
+                compact
+              />
+            </div>
             <input
               ref={fileRef}
               type="file"

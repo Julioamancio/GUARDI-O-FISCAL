@@ -1,7 +1,8 @@
-import { BIBLIOTECA, bibliotecaLabel } from '@guardiao/shared';
+import { bibliotecaLabel } from '@guardiao/shared';
 import { apiFetch } from '@/lib/api';
 import { DownloadButton } from '../solicitacoes/[id]/review-actions';
 import { DocumentViewLink } from '../document-viewer';
+import { CategoryMenu } from '../category-menu';
 import { UploadDocForm } from './documents-actions';
 
 interface DocumentRow {
@@ -60,34 +61,9 @@ export default async function DocumentosPage({
             ))}
           </select>
         </div>
-        <div>
-          <label htmlFor="category" className="mb-1 block text-xs font-medium text-gray-500">
-            Tipo de documento
-          </label>
-          <select
-            id="category"
-            name="category"
-            defaultValue={params.category ?? ''}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          >
-            <option value="">Todos</option>
-            {BIBLIOTECA.map((cat) =>
-              cat.children ? (
-                <optgroup key={cat.slug} label={`${cat.icon ?? ''} ${cat.label}`.trim()}>
-                  <option value={cat.slug}>Todas as {cat.label.toLowerCase()}</option>
-                  {cat.children.map((child) => (
-                    <option key={child.slug} value={child.slug}>
-                      {child.label}
-                    </option>
-                  ))}
-                </optgroup>
-              ) : (
-                <option key={cat.slug} value={cat.slug}>
-                  {`${cat.icon ?? ''} ${cat.label}`.trim()}
-                </option>
-              ),
-            )}
-          </select>
+        <div className="w-64">
+          <label className="mb-1 block text-xs font-medium text-gray-500">Tipo de documento</label>
+          <CategoryMenu name="category" value={params.category ?? ''} allowAll allowGroup />
         </div>
         <div>
           <label htmlFor="competence" className="mb-1 block text-xs font-medium text-gray-500">
