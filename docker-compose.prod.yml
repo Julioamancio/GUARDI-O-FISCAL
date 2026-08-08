@@ -73,6 +73,10 @@ services:
       REDIS_HOST: redis
       MINIO_ENDPOINT: minio
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      PASTAS_DIR: /dados-empresas
+    volumes:
+      # Espelho documental: pasta por empresa, navegável direto na VPS
+      - ./dados-empresas:/dados-empresas
     depends_on:
       postgres:
         condition: service_healthy

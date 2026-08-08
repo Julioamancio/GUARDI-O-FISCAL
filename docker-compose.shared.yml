@@ -89,6 +89,10 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET_DOCUMENTS: documentos
       APP_DOMAIN: ${APP_DOMAIN:-localhost}
+      PASTAS_DIR: /dados-empresas
+    volumes:
+      # Espelho documental: pasta por empresa, navegável direto na VPS
+      - ./dados-empresas:/dados-empresas
     depends_on:
       postgres:
         condition: service_healthy

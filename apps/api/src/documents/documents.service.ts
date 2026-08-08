@@ -8,6 +8,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { UPLOAD_ALLOWED_EXTENSIONS, UPLOAD_MAX_BYTES } from '@guardiao/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { CompanyFoldersService } from '../storage/company-folders.service';
 import { AuditService } from '../audit/audit.service';
 import { TenantContext } from '../common/tenant-context';
 import { UploadDocumentDto } from './dto/documents.dto';
@@ -39,6 +40,7 @@ export class DocumentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly folders: CompanyFoldersService,
     private readonly audit: AuditService,
   ) {}
 
@@ -111,6 +113,9 @@ export class DocumentsService {
         uploadedById,
       },
     });
+
+    // Espelha na pasta da empresa no disco da VPS (não bloqueia o upload)
+    void this.folders.mirrorVersion(versionRow.id, file.buffer);
 
     await this.audit.log({
       action: 'documents.upload',

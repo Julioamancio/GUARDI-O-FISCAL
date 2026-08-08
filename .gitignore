@@ -33,3 +33,4 @@ backups/*.age
 .DS_Store
 Thumbs.db
 .env.shared
+dados-empresas/
