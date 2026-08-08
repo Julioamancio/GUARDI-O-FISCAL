@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { isValidCnpj, normalizeCnpj } from '@guardiao/shared';
+import { isValidCnpj, isValidCnpjOrCpf, normalizeCnpj } from '@guardiao/shared';
 import { parseCsv } from '../common/csv';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -225,18 +225,71 @@ export class CompaniesService {
     CompaniesService.IMPORT_HEADER.join(';') +
     '\r\nContabilidade Exemplo LTDA;12.345.678/0001-90;Exemplo;SIMPLES_NACIONAL;SP;São Paulo;contato@exemplo.com.br;(11) 99999-0000\r\n';
 
+  /** Cabeçalhos alternativos aceitos (planilhas reais dos escritórios variam muito). */
+  private static readonly HEADER_ALIASES: Record<string, string> = {
+    empresa: 'razao_social',
+    cliente: 'razao_social',
+    nome: 'razao_social',
+    razao: 'razao_social',
+    'cnpj/cpf': 'cnpj',
+    cnpj_cpf: 'cnpj',
+    'cpf/cnpj': 'cnpj',
+    cpf_cnpj: 'cnpj',
+    cpf: 'cnpj',
+    documento: 'cnpj',
+    regime: 'regime_tributario',
+    tributacao: 'regime_tributario',
+    apuracao: 'regime_tributario',
+    tipo_apuracao: 'regime_tributario',
+    tipo_apuracao_impostos: 'regime_tributario',
+    tipo_de_apuracao: 'regime_tributario',
+    'e-mail': 'email',
+    e_mail: 'email',
+    fone: 'telefone',
+    celular: 'telefone',
+    phone: 'telefone',
+    fantasia: 'nome_fantasia',
+    estado: 'uf',
+    cidade: 'municipio',
+    responsavel: 'contato',
+  };
+
+  /** Regimes escritos por extenso na planilha → valor canônico do sistema. */
+  private static readonly REGIME_ALIASES: Record<string, string> = {
+    SIMPLES: 'SIMPLES_NACIONAL',
+    PRESUMIDO: 'LUCRO_PRESUMIDO',
+    REAL: 'LUCRO_REAL',
+    IMUNE: 'IMUNE_ISENTA',
+    ISENTA: 'IMUNE_ISENTA',
+  };
+
+  /** minúsculas, sem acento, espaços viram _ — e aplica os apelidos conhecidos. */
+  private static normalizeHeaderCell(raw: string): string {
+    const flat = raw
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, '_');
+    return CompaniesService.HEADER_ALIASES[flat] ?? flat;
+  }
+
   /**
    * Importa empresas de um CSV. confirm=false = pré-visualização (valida tudo,
    * não grava nada); confirm=true = grava apenas as linhas válidas.
+   * Aceita cabeçalhos flexíveis (EMPRESA, CNPJ/CPF, TIPO APURAÇÃO IMPOSTOS...),
+   * CPF além de CNPJ, e cria o contato da empresa quando a coluna "contato" existe.
    */
   async importCsv(fileBuffer: Buffer, confirm: boolean) {
     const rows = parseCsv(fileBuffer.toString('utf8'));
     if (rows.length < 2) throw new BadRequestException('CSV vazio — baixe o modelo em /companies/import/template');
 
-    const header = rows[0].map((h) => h.trim().toLowerCase().replace(/\s+/g, '_'));
+    const header = rows[0].map((h) => CompaniesService.normalizeHeaderCell(h));
     const col = (name: string) => header.indexOf(name);
     if (col('razao_social') === -1 || col('cnpj') === -1) {
-      throw new BadRequestException('Cabeçalho inválido: as colunas razao_social e cnpj são obrigatórias');
+      throw new BadRequestException(
+        'Cabeçalho inválido: preciso de uma coluna com o nome da empresa (razao_social/EMPRESA) e uma com o documento (cnpj/CNPJ/CPF)',
+      );
     }
 
     const REGIMES = ['SIMPLES_NACIONAL', 'LUCRO_PRESUMIDO', 'LUCRO_REAL', 'MEI', 'IMUNE_ISENTA', 'OUTRO'];
@@ -246,7 +299,7 @@ export class CompaniesService {
     const errors: Array<{ line: number; error: string }> = [];
     const valid: Array<{
       razaoSocial: string; cnpj: string; nomeFantasia?: string; regimeTributario?: string;
-      uf?: string; municipio?: string; email?: string; phone?: string;
+      uf?: string; municipio?: string; email?: string; phone?: string; contato?: string;
     }> = [];
 
     rows.slice(1).forEach((row, index) => {
@@ -254,11 +307,12 @@ export class CompaniesService {
       const get = (name: string) => (col(name) >= 0 ? (row[col(name)] ?? '').trim() : '');
       const razaoSocial = get('razao_social');
       const rawCnpj = get('cnpj');
-      const regime = get('regime_tributario').toUpperCase().replace(/\s+/g, '_');
+      const regimeRaw = CompaniesService.normalizeHeaderCell(get('regime_tributario')).toUpperCase();
+      const regime = CompaniesService.REGIME_ALIASES[regimeRaw] ?? regimeRaw;
       const uf = get('uf').toUpperCase();
 
-      if (!razaoSocial) return errors.push({ line, error: 'razao_social vazia' });
-      if (!isValidCnpj(rawCnpj)) return errors.push({ line, error: `CNPJ inválido: "${rawCnpj}"` });
+      if (!razaoSocial) return errors.push({ line, error: 'nome da empresa vazio' });
+      if (!isValidCnpjOrCpf(rawCnpj)) return errors.push({ line, error: `CNPJ/CPF inválido: "${rawCnpj}"` });
       const cnpj = normalizeCnpj(rawCnpj);
       if (seenInFile.has(cnpj)) return errors.push({ line, error: `CNPJ duplicado no arquivo: ${cnpj}` });
       if (existingCnpjs.has(cnpj)) return errors.push({ line, error: `CNPJ já cadastrado no escritório: ${cnpj}` });
@@ -277,6 +331,7 @@ export class CompaniesService {
         municipio: get('municipio') || undefined,
         email: get('email') || undefined,
         phone: get('telefone') || undefined,
+        contato: get('contato') || undefined,
       });
     });
 
@@ -295,10 +350,32 @@ export class CompaniesService {
       }
       const tenantId = this.tid();
       const result = await this.prisma.company.createMany({
-        data: valid.map((v) => ({ ...v, tenantId, regimeTributario: v.regimeTributario as never })),
+        data: valid.map(({ contato: _contato, ...v }) => ({
+          ...v,
+          tenantId,
+          regimeTributario: v.regimeTributario as never,
+        })),
         skipDuplicates: true,
       });
       created = result.count;
+
+      // Coluna "contato" na planilha vira o contato principal da empresa
+      const contactRows = valid.filter((v) => v.contato);
+      if (contactRows.length > 0) {
+        const companies = await this.prisma.scoped.company.findMany({
+          where: { cnpj: { in: contactRows.map((v) => v.cnpj) } },
+          select: { id: true, cnpj: true },
+        });
+        const idByCnpj = new Map(companies.map((c) => [c.cnpj, c.id]));
+        await this.prisma.companyContact.createMany({
+          data: contactRows.flatMap((v) => {
+            const companyId = idByCnpj.get(v.cnpj);
+            return companyId
+              ? [{ tenantId, companyId, name: v.contato!, email: v.email ?? null, phone: v.phone ?? null }]
+              : [];
+          }),
+        });
+      }
       await this.audit.log({
         action: 'companies.import',
         entity: 'Company',

@@ -13,7 +13,11 @@ interface ImportResult {
   preview: Array<{ razaoSocial: string; cnpj: string }>;
 }
 
-/** Importação CSV com pré-visualização obrigatória antes de confirmar (req. 32). */
+/**
+ * Importação de planilha (CSV ou Excel) com pré-visualização obrigatória (req. 32).
+ * .xlsx/.xls são convertidos para CSV no navegador; o servidor aceita cabeçalhos
+ * flexíveis (EMPRESA, CNPJ/CPF, TIPO APURAÇÃO IMPOSTOS, email, contato...).
+ */
 export function ImportCsv() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -27,8 +31,16 @@ export function ImportCsv() {
     setBusy(true);
     setError(null);
     try {
+      let upload: File = file;
+      if (/\.xlsx?$/i.test(file.name)) {
+        const XLSX = await import('xlsx');
+        const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const csv = XLSX.utils.sheet_to_csv(sheet);
+        upload = new File([csv], file.name.replace(/\.xlsx?$/i, '.csv'), { type: 'text/csv' });
+      }
       const body = new FormData();
-      body.append('file', file);
+      body.append('file', upload);
       const response = await fetch(`/api/proxy/companies/import${confirm ? '?confirm=true' : ''}`, {
         method: 'POST',
         body,
@@ -52,7 +64,7 @@ export function ImportCsv() {
       <input
         ref={fileRef}
         type="file"
-        accept=".csv"
+        accept=".csv,.xlsx,.xls"
         className="hidden"
         onChange={(e) => {
           setFile(e.target.files?.[0] ?? null);
@@ -64,7 +76,7 @@ export function ImportCsv() {
         onClick={() => fileRef.current?.click()}
         className="rounded-lg border border-brand-500 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50"
       >
-        📥 Importar CSV
+        📥 Importar planilha (Excel/CSV)
       </button>
       <a
         href="/api/proxy/companies/import/template"

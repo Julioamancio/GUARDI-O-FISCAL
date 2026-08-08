@@ -31,7 +31,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         isClient={me.roles.includes('client')}
         canManageUsers={me.permissions.includes('users.manage')}
       />
-      <main className="mx-auto w-full max-w-6xl flex-1 p-6">{children}</main>
+      <main className="w-full flex-1 px-8 py-6">{children}</main>
       <Footer />
     </div>
   );

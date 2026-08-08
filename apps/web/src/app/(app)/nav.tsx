@@ -55,7 +55,7 @@ export function Nav({
 
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-6">
+      <div className="flex h-16 w-full items-center gap-5 px-6">
         {/* Marca: nunca quebra linha, logo com presença */}
         <Link href="/dashboard" className="flex shrink-0 items-center gap-2.5">
           <img
@@ -71,7 +71,7 @@ export function Nav({
 
         {/* Navegação ocupa o espaço central */}
         {!isSuperadmin ? (
-          <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+          <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {LINKS.map((link) => (
               <Link
                 key={link.href}
